@@ -1,0 +1,115 @@
+---
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r echo=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE, 
+  message = FALSE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  cache = TRUE
+)
+```
+# Tailor
+
+<!-- badges: start -->
+
+[![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![R build status](https://github.com/sbthandras/tailor/workflows/R-CMD-check/badge.svg)](https://github.com/sbthandras/tailor/actions)
+[![Coverage](https://codecov.io/github/sbthandras/tailor/coverage.svg?branch=master)](https://app.codecov.io/gh/sbthandras/tailor/branch/master) 
+[![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.20.706991-blue)](https://doi.org/10.64898/2026.02.20.706991)
+
+<!-- badges: end -->
+
+`tailor` is a **T**ool for **A**dapter-domain **I**dentification and **L**inking **O**f **R**BPs.
+
+## Installation
+
+#### Install from Github (development version)
+
+```{r install_github, eval=FALSE}
+install.packages("devtools")
+devtools::install_github("sbthandras/tailor")
+```
+
+## Usage
+
+#### Identify shared adapter domain between two RBPs
+
+```{r}
+# load package
+library(tailor)
+
+# load example data set
+data(rbps)
+
+# align first two RBPs
+ps <- position_scores(
+  pattern = "MN395291-1", 
+  subject = "ON513429-1", 
+  id_var = "Core_ORF",
+  seq_var = "translation",
+  submat = "BLOSUM80",
+  data = rbps
+)
+
+ps$position_scores |> head(5)
+
+# find breakpoints along the alignment 
+bps <- find_breakpoints(ps)
+
+bps
+
+# identify the conserved N-terminal domain if it exists
+cnt <- find_adapter(bps)
+
+cnt
+```
+
+Note, for positions 1-152 and 153-172 the scores were quite different, but both ranges were classified as conserved, so they were merged (default). To investigate this, let's plot the position scores:
+
+```{r, out.width = '60%', dpi = 300}
+plot(ps)
+```
+
+Depending on the method used for detecting breakpoints, the length of the identified adapter may differ. By default, `find_breakpoints()` uses `method = "cemean"` in which the function estimates the number of breakpoints and their locations using the Cross-Entropy Method from the `breakpoint` package. With `method = "plateau"` we get a different result:
+
+```{r}
+ps |> find_breakpoints(method = "plateau", type = "ewma") |> find_adapter()
+```
+
+Note that with this method we detect a shorter conserved N-terminal domain. 
+
+#### Link RBPs by shared adapter domains
+
+```{r, out.width = '60%', dpi = 300}
+# load adapters of the example data set
+data(adapters)
+
+# convert to pident matrix and order by the original data frame
+amat <- adapter_matrix(adapters, ids = rbps$Core_ORF)
+
+# assign RBPs to clusters based on the distance matrix
+clusters <- cluster_adapters(amat)
+
+# visualise pident matrix with cluster assignments
+plot(amat, clusters = clusters)
+```
+
+## Citation
+
+If you use `tailor` in a publication, please cite our paper:
+
+András Asbóth, Tamás Stirling, Orsolya Méhi, Gábor Apjok, Victor Klein-Sousa, Nicholas MI Taylor, Hiba Hadj Mehdi, Balázs Papp, Eszter Ari, Bálint Kintses (2026) A global map of receptor-binding protein compatibility for the programmable design of Klebsiella and Acinetobacter phages. https://doi.org/10.64898/2026.02.20.706991 
+
+## Meta
+
+- Please [report any issues, bugs or feature requests](https://github.com/sbthandras/tailor/issues).
+- License: MIT
+- Get citation information for `tailor` in R with `citation("tailor")`

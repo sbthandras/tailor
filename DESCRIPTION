@@ -1,0 +1,38 @@
+Package: tailor
+Type: Package
+Title: Tool for Adapter-domain Identification and Linking Of RBPs
+Version: 0.1.0
+Authors@R: c(
+    person("András", "Asbóth", role = c("aut", "cre"),
+        email = "sbthandras+bioinfo@gmail.com",
+        comment = c(ORCID = "0009-0001-2284-412X")),
+    person("Tamás", "Stirling", role = "aut",
+        comment = c(ORCID = "0000-0002-8964-6443")))
+Description: Bacteriophages (phages) are viruses that infect bacteria. Many 
+    phages encode receptor binding proteins (RBPs) that mediate attachment to 
+    their bacterial hosts. Most RBPs contain a conserved N-terminal domain (we 
+    refer to this as an "adapter") which anchors the protein to the phage 
+    particle. This package provides functions to indentify these adapters and 
+    group them based on sequence similarity.
+Depends:
+    R (>= 4.1.0)
+Imports:
+    breakpoint,
+    doParallel,
+    dplyr,
+    foreach,
+    ggplot2,
+    patchwork,
+    pwalign, 
+    qcc,
+    rlang,
+    reshape2,
+    tibble,
+    tidyr
+Remotes:
+    stitam/breakpoint
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3.9000
+Config/testthat/edition: 3
