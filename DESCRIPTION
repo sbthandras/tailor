@@ -29,6 +29,8 @@ Imports:
     reshape2,
     tibble,
     tidyr
+Suggests:
+    testthat
 Remotes:
     stitam/breakpoint
 License: GPL (>= 3)
