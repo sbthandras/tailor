@@ -57,16 +57,15 @@ adapter_matrix <- function(
     }
   }
   value <- match.arg(value, c("pident", "mean_score", "end"))
-  cl <- parallel::makeCluster(cores, type = "PSOCK")
-  doParallel::registerDoParallel(cl)
-  on.exit(parallel::stopCluster(cl), add = TRUE)
+  
   dmat <- matrix(NA, nrow = length(ids), ncol = length(ids))
   rownames(dmat) = ids
   colnames(dmat) = ids
-  dmat <- foreach::foreach(
-    i = seq_len(nrow(dmat)), .combine = 'rbind',.inorder=TRUE) %dopar% {
-      i <- i
-      for (j in seq_len(ncol(dmat))){
+  
+  if (cores == 1) {
+    # Use regular for loop when cores = 1
+    for (i in seq_len(nrow(dmat))) {
+      for (j in seq_len(ncol(dmat))) {
         if (i == j) next()
         adapter <- adapters |>
           filter_comparisons(ids[i]) |>
@@ -79,8 +78,33 @@ adapter_matrix <- function(
           stop("Multiple comparisons found for ids: ", ids[i], ", ", ids[j], ".")
         }
       }
-      return(dmat[i,])
     }
+  } else {
+    # Use parallelization when cores > 1
+    cl <- parallel::makeCluster(cores, type = "PSOCK")
+    doParallel::registerDoParallel(cl)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+    
+    dmat <- foreach::foreach(
+      i = seq_len(nrow(dmat)), .combine = 'rbind', .inorder = TRUE) %dopar% {
+        i <- i
+        for (j in seq_len(ncol(dmat))) {
+          if (i == j) next()
+          adapter <- adapters |>
+            filter_comparisons(ids[i]) |>
+            filter_comparisons(ids[j])
+          if (nrow(adapter) == 0) {
+            stop("No comparisons found for ids: ", ids[i], ", ", ids[j], ".")
+          } else if (nrow(adapter) == 1) {
+            dmat[i, j] <- ifelse(is.na(adapter[[value]]), 0, adapter[[value]])
+          } else {
+            stop("Multiple comparisons found for ids: ", ids[i], ", ", ids[j], ".")
+          }
+        }
+        return(dmat[i, ])
+      }
+  }
+  
   if (value == "pident") diag(dmat) <- 1
   rownames(dmat) <- ids
   colnames(dmat) <- ids

@@ -1,7 +1,7 @@
 Package: tailor
 Type: Package
 Title: Tool for Adapter-domain Identification and Linking Of RBPs
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("András", "Asbóth", role = c("aut", "cre"),
         email = "sbthandras+bioinfo@gmail.com",
@@ -29,6 +29,8 @@ Imports:
     reshape2,
     tibble,
     tidyr
+Suggests:
+    testthat
 Remotes:
     stitam/breakpoint
 License: GPL (>= 3)

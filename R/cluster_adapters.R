@@ -40,12 +40,22 @@ cluster_adapters <- function(
 
   if (is.null(k_max)) k_max <- nrow(mat)
 
-  cl <- parallel::makeCluster(cores, type = "PSOCK")
-  doParallel::registerDoParallel(cl)
-  on.exit(parallel::stopCluster(cl), add = TRUE)
+  if (cores == 1) {
+    # Use regular for loop when cores = 1
+    schocos_list <- list()
+    for (k in k_min:k_max) {
+      schocos_list[[length(schocos_list) + 1]] <- schoco(mat, k, homogeneity_thr, completeness_thr)
+    }
+    schocos <- do.call(rbind, schocos_list)
+  } else {
+    # Use parallelization when cores > 1
+    cl <- parallel::makeCluster(cores, type = "PSOCK")
+    doParallel::registerDoParallel(cl)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
 
-  schocos <- foreach::foreach(k = k_min:k_max, .combine = 'rbind') %dopar% {
-    schoco(mat, k, homogeneity_thr, completeness_thr)
+    schocos <- foreach::foreach(k = k_min:k_max, .combine = 'rbind') %dopar% {
+      schoco(mat, k, homogeneity_thr, completeness_thr)
+    }
   }
 
   schocos <- split(schocos, schocos$nclust) |> unname()

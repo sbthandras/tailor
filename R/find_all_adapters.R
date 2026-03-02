@@ -50,14 +50,10 @@ find_all_adapters <- function(
   names(pairs) <- c("pattern", "subject")
   adapters <- data.frame()
 
-  cl <- parallel::makeCluster(cores, type = "PSOCK")
-  doParallel::registerDoParallel(cl)
-  on.exit(parallel::stopCluster(cl), add = TRUE)
-
-  adapters <- foreach::foreach(
-    i = seq_len(nrow(pairs)), .combine = 'rbind'
-    ) %dopar% {
-      i <- i
+  if (cores == 1) {
+    # Use regular for loop when cores = 1
+    adapters_list <- list()
+    for (i in seq_len(nrow(pairs))) {
       pattern <- pairs$pattern[i]
       subject <- pairs$subject[i]
       ps <- position_scores(
@@ -76,8 +72,41 @@ find_all_adapters <- function(
           start_threshold = start_threshold,
           merge = merge
         )
-      return(adapter)
+      adapters_list[[i]] <- adapter
+    }
+    adapters <- do.call(rbind, adapters_list)
+  } else {
+    # Use parallelization when cores > 1
+    cl <- parallel::makeCluster(cores, type = "PSOCK")
+    doParallel::registerDoParallel(cl)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+
+    adapters <- foreach::foreach(
+      i = seq_len(nrow(pairs)), .combine = 'rbind'
+      ) %dopar% {
+        i <- i
+        pattern <- pairs$pattern[i]
+        subject <- pairs$subject[i]
+        ps <- position_scores(
+          pattern_id = pattern,
+          subject_id = subject,
+          id_var = id_var,
+          seq_var = seq_var,
+          submat = submat,
+          data = data,
+          verbose = verbose
+        )
+        adapter <- ps |>
+          find_breakpoints(method = method, ...) |>
+          find_adapter(
+            pident_threshold = pident_threshold,
+            start_threshold = start_threshold,
+            merge = merge
+          )
+        return(adapter)
+    }
   }
+  
   class(adapters) <- c("adapter", class(adapters))
   return(adapters)
 }
