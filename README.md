@@ -8,23 +8,13 @@
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R build
 status](https://github.com/sbthandras/tailor/workflows/R-CMD-check/badge.svg)](https://github.com/sbthandras/tailor/actions)
-[![Coverage](https://codecov.io/github/sbthandras/tailor/graph/badge.svg?branch=master)](https://app.codecov.io/gh/sbthandras/tailor/branch/master)
+[![Coverage](https://codecov.io/github/sbthandras/tailor/graph/badge.svg?branch=main)](https://app.codecov.io/gh/sbthandras/tailor/branch/main)
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.20.706991-blue)](https://doi.org/10.64898/2026.02.20.706991)
 
 <!-- badges: end -->
 
 `tailor` is a **T**ool for **A**dapter-domain **I**dentification and
 **L**inking **O**f **R**BPs.
-
-# IMPORANT NOTICE
-
-The latest version of this repository was publised in
-<https://github.com/sbthandras/tailor> on 2 March 2026.
-
-Following publication this development repository was archived.
-
-Please refer to <https://github.com/sbthandras/tailor> for the latest
-version of the package and documentation.
 
 ## Installation
 
@@ -78,9 +68,9 @@ bps
 #> 5 MN395291-1 ON513429-1   646 913     -0.668  0.131
 
 # identify the conserved N-terminal domain if it exists
-cnt <- find_adapter(bps)
+adapter <- find_adapter(bps)
 
-cnt
+adapter
 #>   pattern_id subject_id start end mean_score pident
 #> 1 MN395291-1 ON513429-1     1 172      4.878  0.901
 ```
