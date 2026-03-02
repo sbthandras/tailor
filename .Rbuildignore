@@ -1,0 +1,39 @@
+
+# RStudio
+^.*\.Rproj$
+^\.Rproj\.user$
+
+# Git
+.git
+.gitignore
+.github
+^\.github$
+
+# READMES
+README.html
+README.Rmd
+README.md
+README_files
+CONTRIBUTING.md
+README_cache
+
+# CRAN
+cran-comments.md
+^CRAN-RELEASE$
+
+# Codemeta
+codemeta.json
+^codemeta\.json$
+
+# Scripts
+^data-raw$
+
+# Other
+.vscode
+^codecov\.yml$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+.Rmd.orig
+
+^LICENSE\.md$

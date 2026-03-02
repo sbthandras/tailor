@@ -1,0 +1,24 @@
+# Assembly name:  ASM985965v1
+# Organism name:  Pseudomonas phage vB_PaeP_Lx18 (viruses)
+# Taxid:          2686072
+# Submitter:      na
+# Date:           2020-01-11
+# Assembly type:  na
+# Release type:   major
+# Assembly level: Complete Genome
+# Genome representation: full
+# Assembly method: Newbler v. 3.0
+# Sequencing technology: Illumina
+# GenBank assembly accession: GCA_009859655.2
+#
+## Assembly-Units:
+## GenBank Unit Accession	RefSeq Unit Accession	Assembly-Unit name
+## GCA_009859665.2		Primary Assembly
+#
+# Ordered by chromosome/plasmid; the chromosomes/plasmids are followed by
+# unlocalized scaffolds.
+# Unplaced scaffolds are listed at the end.
+# RefSeq is equal or derived from GenBank object.
+#
+# Sequence-Name	Sequence-Role	Assigned-Molecule	Assigned-Molecule-Location/Type	GenBank-Accn	Relationship	RefSeq-Accn	Assembly-Unit	Sequence-Length	UCSC-style-name
+MN692672.2	assembled-molecule	na	Segment	MN692672.2	<>	na	Primary Assembly	42735	na
