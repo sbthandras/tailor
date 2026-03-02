@@ -23,11 +23,15 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Install dependencies
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::covr, any::xml2
+          needs: coverage
+
+      - name: Install package dependencies
         run: |
           install.packages("pak")
           pak::pkg_install(".", dependencies = TRUE)
-          pak::pkg_install("covr")
         shell: Rscript {0}
 
       - name: Test coverage
