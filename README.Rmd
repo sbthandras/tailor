@@ -21,6 +21,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 
 ```{r coverage, echo=FALSE}
+Sys.setenv(NOT_CRAN = "true")
 cov <- covr::package_coverage()
 pct <- covr::percent_coverage(cov)
 pct_label <- sprintf("%.1f%%", pct)

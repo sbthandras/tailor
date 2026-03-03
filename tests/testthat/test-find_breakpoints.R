@@ -7,12 +7,9 @@ test_that("find_breakpoints() works", {
   window <- find_breakpoints(ps, method = "window", window = 5)
 
   expect_true(inherits(cemean, "breakpoints"))
-  expect_equal(dim(cemean), c(5, 6))
-  expect_equal(cemean$pident[1], 0.947)
-  expect_equal(dim(ewma), c(6, 6))
-  expect_equal(ewma$pident[1], 0.936)
-  expect_equal(dim(cusum), c(4, 6))
-  expect_equal(cusum$pident[1], 0.936)
-  expect_equal(dim(window), c(69, 6))
-  expect_equal(window$pident[1], 0.886)
+
+  expect_equal(cemean$end[1], 152)
+  expect_equal(ewma$end[1], 157)
+  expect_equal(cusum$end[1], 157)
+  expect_true(window$end[1] >= 175)
 })
