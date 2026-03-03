@@ -83,7 +83,7 @@ but both ranges were classified as conserved, so they were merged
 plot(ps)
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="60%" />
 
 Depending on the method used for detecting breakpoints, the length of
 the identified adapter may differ. By default, `find_breakpoints()` uses
@@ -117,7 +117,7 @@ clusters <- cluster_adapters(amat)
 plot(amat, clusters = clusters)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="60%" />
 
 ## Citation
 
