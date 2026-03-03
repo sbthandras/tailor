@@ -42,7 +42,7 @@ position_scores <- function(
   if (!subject_id %in% data[[id_var]]) {
     stop(paste0("Subject ID not found: ", subject_id))
   }
-  df <- data |> dplyr::filter(.data[[id_var]] %in% c(pattern_id, subject_id))
+  df <- data |> dplyr::filter(!!rlang::sym(id_var) %in% c(pattern_id, subject_id))
   df[[seq_var]] <- gsub("\\*", "", df[[seq_var]])
   valid_input <- validate_rbps(
     df, id_var = id_var, seq_var = seq_var, verbose = verbose

@@ -119,16 +119,16 @@ plot.ps <- function(
       values_to = "position"
     ) %>%
     dplyr::arrange("position") %>%
-    dplyr::filter(.data$method %in% .env$method)
+    dplyr::filter(!!rlang::sym("method") %in% .env$method)
   if (is.null(highlight)) {
     highlight_value <- end_long |>
-      dplyr::pull(.data$position) |>
+      dplyr::pull(!!rlang::sym("position")) |>
       stats::na.omit() |>
       max()
   } else {
     highlight_value <- end_long |>
-      dplyr::filter(.data$method == highlight) |>
-      dplyr::pull(.data$position)
+      dplyr::filter(!!rlang::sym("method") == highlight) |>
+      dplyr::pull(!!rlang::sym("position"))
   }
   # moving averages
   avg <- vector()
@@ -153,16 +153,16 @@ plot.ps <- function(
     )
   }
   if (type == "indiv") {
-    g <- ggplot(res, aes(.data$position, .data$score))
+    g <- ggplot(res, aes(!!rlang::sym("position"), !!rlang::sym("score")))
   }
   if (type == "ma") {
-    g <- ggplot(res, aes(.data$position, .data$ma))
+    g <- ggplot(res, aes(!!rlang::sym("position"), !!rlang::sym("ma")))
   }
   if (type == "cusum") {
-    g <- ggplot(res, aes(.data$position, .data$cumsum))
+    g <- ggplot(res, aes(!!rlang::sym("position"), !!rlang::sym("cumsum")))
   }
   g <- g +
-    geom_point(aes(color = .data$domain), alpha = 0.5) +
+    geom_point(aes(color = !!rlang::sym("domain")), alpha = 0.5) +
     scale_color_manual(
       values = c("N-terminal" = "red", "C-terminal" = "blue"),
       na.translate = FALSE
@@ -170,9 +170,9 @@ plot.ps <- function(
     geom_vline(
       data = end_long,
       aes(
-        xintercept = .data$position,
-        group = .data$method,
-        linetype = .data$method
+        xintercept = !!rlang::sym("position"),
+        group = !!rlang::sym("method"),
+        linetype = !!rlang::sym("method")
       ),
       key_glyph = "path"
     )

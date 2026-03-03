@@ -42,8 +42,8 @@ find_all_adapters <- function(
   ) {
 
   pairs <- data |>
-    dplyr::filter(.data[[id_var]] %in% ids) |>
-    dplyr::pull(.data[[id_var]]) |>
+    dplyr::filter(!!rlang::sym(id_var) %in% ids) |>
+    dplyr::pull(!!rlang::sym(id_var)) |>
     utils::combn(2) |>
     t() |>
     as.data.frame()
