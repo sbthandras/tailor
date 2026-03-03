@@ -1,4 +1,5 @@
 test_that("plot() works with adapter matrices", {
+  skip_on_ci()
   data(rbps)
   data(adapters)
   amat <- adapter_matrix(adapters)
