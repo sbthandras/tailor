@@ -8,7 +8,7 @@
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R build
 status](https://github.com/sbthandras/tailor/workflows/R-CMD-check/badge.svg)](https://github.com/sbthandras/tailor/actions)
-[![Coverage](https://codecov.io/github/sbthandras/tailor/graph/badge.svg?branch=main)](https://app.codecov.io/gh/sbthandras/tailor/branch/main)
+[![Coverage](https://img.shields.io/badge/coverage-12.1%25-red)](#test-coverage)
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.20.706991-blue)](https://doi.org/10.64898/2026.02.20.706991)
 
 <!-- badges: end -->
@@ -83,7 +83,7 @@ but both ranges were classified as conserved, so they were merged
 plot(ps)
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="60%" />
 
 Depending on the method used for detecting breakpoints, the length of
 the identified adapter may differ. By default, `find_breakpoints()` uses
@@ -117,7 +117,7 @@ clusters <- cluster_adapters(amat)
 plot(amat, clusters = clusters)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="60%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="60%" />
 
 ## Citation
 

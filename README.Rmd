@@ -20,9 +20,34 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
+```{r coverage, echo=FALSE}
+cov <- covr::package_coverage()
+pct <- covr::percent_coverage(cov)
+pct_label <- sprintf("%.1f%%", pct)
+  
+# Choose badge color based on coverage
+col <- if (pct >= 90) {
+  "brightgreen"
+  } else if (pct >= 75) {
+    "yellow"
+  } else if (pct >= 50) {
+    "orange"
+  } else {
+    "red"
+  }
+  
+badge_url <- sprintf(
+  "https://img.shields.io/badge/coverage-%s-%s",
+  URLencode(pct_label),
+  col
+)
+```
+
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R build status](https://github.com/sbthandras/tailor/workflows/R-CMD-check/badge.svg)](https://github.com/sbthandras/tailor/actions)
-[![Coverage](https://codecov.io/github/sbthandras/tailor/graph/badge.svg?branch=main)](https://app.codecov.io/gh/sbthandras/tailor/branch/main)
+```{r coverage-badge, echo=FALSE, results='asis'}
+cat(sprintf("[![Coverage](%s)](#test-coverage)\n\n", badge_url))
+```
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.20.706991-blue)](https://doi.org/10.64898/2026.02.20.706991)
 
 <!-- badges: end -->

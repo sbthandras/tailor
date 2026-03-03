@@ -1,0 +1,92 @@
+name: update-readme
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  bot-job:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rmarkdown
+          needs: check
+
+      - name: List installed packages
+        run: |
+          Rscript -e "print(installed.packages()[,c('Package','Version')])"
+
+      - name: Install package
+        run: |
+          R CMD INSTALL .
+
+      - name: Render README
+        run: |
+          R -e "rmarkdown::render('README.Rmd', output_format = 'github_document')"
+          git add README.md
+
+      - name: Check staged changes
+        run: |
+          if git diff --cached --quiet --exit-code; then
+            echo "changed=false" >> $GITHUB_ENV
+          else
+            echo "changed=true" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push changes
+        if: env.changed == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update README"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Comment on PR when changed
+        if: env.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Updated repo README file."
+            })
+
+      - name: Comment on PR when unchanged
+        if: env.changed == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Repo README file is up to date. Nothing to commit."
+            })
