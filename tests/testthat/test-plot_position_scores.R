@@ -12,3 +12,17 @@ test_that("plot() works with position scores", {
   vdiffr::expect_doppelganger("position-scores-indiv", g3)
   vdiffr::expect_doppelganger("position-scores-cusum", g4)
 })
+
+test_that("plot() works with position scores - covr hack", {
+  data(rbps)
+  ps <- position_scores("MN395291-1", "ON513429-1", data = rbps)
+  g1 <- plot(ps)
+  g2 <- plot(ps, method = "cemean", highlight = "cemean")
+  g3 <- plot(ps, type = "indiv")
+  g4 <- plot(ps, type = "cusum")
+
+  expect_true(inherits(g1, "ggplot"))
+  expect_true(inherits(g2, "ggplot"))
+  expect_true(inherits(g3, "ggplot"))
+  expect_true(inherits(g4, "ggplot"))
+})
