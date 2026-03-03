@@ -6,7 +6,7 @@
 #' @param data data.frame; a data frame that contains IDs and sequences
 #' @param id_var character; variable within \code{data} that stores IDs.
 #' @param seq_var character; variable within \code{data} that stores sequences.
-#' @param submat character; the substitution matrix. See 
+#' @param submat character; the substitution matrix. See
 #' \code{position_scores()} for more information.
 #' @param method character; the method to use for finding breakpoints. Either
 #' "cemean", "plateau", or "window". See \code{find_breakpoints()} for more
@@ -106,7 +106,5 @@ find_all_adapters <- function(
         return(adapter)
     }
   }
-  
-  class(adapters) <- c("adapter", class(adapters))
   return(adapters)
 }
