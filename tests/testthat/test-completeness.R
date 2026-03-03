@@ -8,4 +8,11 @@ test_that("completeness() works", {
   out <- completeness(mat = amat, index = index)
 
   expect_equal(out, 1)
+
+  expect_error(completeness(mat = amat, index = vector()))
+  msg <- capture_error(completeness(mat = amat, index = vector()))
+  expect_equal(
+    msg$message,
+    "cluster must contain at least one element. Please provide indices."
+  )
 })
