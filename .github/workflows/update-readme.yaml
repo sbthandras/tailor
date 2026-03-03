@@ -34,10 +34,11 @@ jobs:
           extra-packages: |
             any::rmarkdown
             any::devtools
+          needs: check
 
       - name: Install tailor package
         run: |
-          R -e "devtools::install_local()"
+          R -q -e "devtools::install_local(upgrade = 'never')"
 
       - name: Render README
         run: |
