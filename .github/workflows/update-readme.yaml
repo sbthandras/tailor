@@ -31,14 +31,16 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: |
-            any::rmarkdown
-            any::devtools
+          extra-packages: any::rmarkdown
           needs: check
 
-      - name: Install tailor package
+      - name: List installed packages
         run: |
-          R -q -e "devtools::install_local(upgrade = 'never')"
+          Rscript -e "print(installed.packages()[,c('Package','Version')])"
+
+      - name: Install package
+        run: |
+          R CMD INSTALL .
 
       - name: Render README
         run: |
