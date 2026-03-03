@@ -35,6 +35,10 @@ jobs:
             any::rmarkdown
             any::devtools
 
+      - name: Install tailor package
+        run: |
+          R -e "devtools::install_local()"
+
       - name: Render README
         run: |
           R -e "rmarkdown::render('README.Rmd', output_format = 'github_document')"
