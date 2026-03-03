@@ -31,7 +31,8 @@ Imports:
     tidyr
 Suggests:
     covr,
-    testthat
+    testthat,
+    vdiffr
 Remotes:
     stitam/breakpoint
 License: GPL (>= 3)
