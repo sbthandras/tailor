@@ -8,7 +8,7 @@
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R build
 status](https://github.com/sbthandras/tailor/workflows/R-CMD-check/badge.svg)](https://github.com/sbthandras/tailor/actions)
-[![Coverage](https://img.shields.io/badge/coverage-12.1%25-red)](#test-coverage)
+[![Coverage](https://img.shields.io/badge/coverage-56.1%25-orange)](#test-coverage)
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.20.706991-blue)](https://doi.org/10.64898/2026.02.20.706991)
 
 <!-- badges: end -->
