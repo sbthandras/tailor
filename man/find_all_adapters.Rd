@@ -28,7 +28,7 @@ find_all_adapters(
 
 \item{seq_var}{character; variable within \code{data} that stores sequences.}
 
-\item{submat}{character; the substitution matrix. See 
+\item{submat}{character; the substitution matrix. See
 \code{position_scores()} for more information.}
 
 \item{method}{character; the method to use for finding breakpoints. Either

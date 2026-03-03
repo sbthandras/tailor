@@ -1,0 +1,18 @@
+test_that("find_breakpoints() works", {
+  data(rbps)
+  ps <- position_scores("MN395291-1", "ON513429-1", data = rbps)
+  cemean <- find_breakpoints(ps, method = "cemean", Nmax = 5)
+  ewma <- find_breakpoints(ps, method = "plateau", type = "ewma", lambda = 0.2)
+  cusum <- find_breakpoints(ps, method = "plateau", type = "cusum")
+  window <- find_breakpoints(ps, method = "window", window = 5)
+
+  expect_true(inherits(cemean, "breakpoints"))
+  expect_equal(dim(cemean), c(5, 6))
+  expect_equal(cemean$pident[1], 0.947)
+  expect_equal(dim(ewma), c(6, 6))
+  expect_equal(ewma$pident[1], 0.936)
+  expect_equal(dim(cusum), c(4, 6))
+  expect_equal(cusum$pident[1], 0.936)
+  expect_equal(dim(window), c(69, 6))
+  expect_equal(window$pident[1], 0.886)
+})

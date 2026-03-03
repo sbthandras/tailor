@@ -49,8 +49,8 @@ filter_comparisons <- function(
   if (is.null(data)) {
     out <- comps |>
       dplyr::filter(
-        .data$pattern_id %in% filter_value |
-        .data$subject_id %in% filter_value
+        !!rlang::sym("pattern_id") %in% filter_value |
+        !!rlang::sym("subject_id") %in% filter_value
       )
     return(out)
   }

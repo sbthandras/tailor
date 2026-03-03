@@ -35,6 +35,7 @@ find_adapter <- function(
     )
     stop(msg)
   }
+  class(bps) <- class(bps)[-which(class(bps) == "breakpoints")]
   if (start_threshold < 0 | start_threshold > 1) {
     stop("start_threshold must be between 0 and 1.")
   }

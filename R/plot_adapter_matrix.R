@@ -3,7 +3,7 @@
 #' Take an adapter matrix and optionally data frame of cluster designations and
 #' plot them on a simple heatmap.
 #' @import ggplot2 patchwork
-#' @param x adapter_matrix; a matrix of class "adapter_matrix". Use 
+#' @param x adapter_matrix; a matrix of class "adapter_matrix". Use
 #' adapter_matrix() to create a compatible matrix.
 #' @param clusters data.frame; a table of RBP IDs and cluster designations.
 #' @param ... additional arguments (not used).
@@ -26,10 +26,13 @@ plot.adapter_matrix <- function(x, clusters = NULL, ...) {
   mat_long <- reshape2::melt(mat, value.name = "pident")
   p_main <- ggplot2::ggplot(
       mat_long,
-      ggplot2::aes(x = .data$Var1, y = .data$Var2, fill = .data$pident)
+      ggplot2::aes(
+        x = !!rlang::sym("Var1"), 
+        y = !!rlang::sym("Var2"),
+        fill = !!rlang::sym("pident"))
     ) +
     ggplot2::geom_tile(color = "black") +
-    ggplot2::geom_text(ggplot2::aes(label = round(.data$pident, 1))) +
+    ggplot2::geom_text(ggplot2::aes(label = round(!!rlang::sym("pident"), 1))) +
     ggplot2::scale_fill_gradient(low = "white", high = "salmon") +
     ggplot2::theme_minimal() +
     ggplot2::labs(x = "", y = "", fill = "") +
@@ -39,10 +42,13 @@ plot.adapter_matrix <- function(x, clusters = NULL, ...) {
     )
   if (is.null(clusters)) return(p_main)
   row_anno <- clusters |>
-    dplyr::rename(Var2 = .data$id) |>
-    dplyr::mutate(Var2 = factor(.data$Var2, levels = unique(mat_long$Var2)))
+    dplyr::rename(Var2 = !!rlang::sym("id")) |>
+    dplyr::mutate(
+      Var2 = factor(!!rlang::sym("Var2"), levels = unique(mat_long$Var2)))
   p_row <- ggplot2::ggplot(
-    row_anno, ggplot2::aes(x = 1, y = .data$Var2, fill = .data$cluster)) +
+    row_anno, 
+    ggplot2::aes(
+      x = 1, y = !!rlang::sym("Var2"), fill = !!rlang::sym("cluster"))) +
     ggplot2::geom_tile() +
     ggplot2::scale_y_discrete(
       limits = levels(mat_long$Var2), expand = c(0, 0)) +
@@ -55,10 +61,10 @@ plot.adapter_matrix <- function(x, clusters = NULL, ...) {
       legend.position = "none"
     )
   col_anno <- clusters |>
-    dplyr::rename(Var1 = .data$id) |>
-    dplyr::mutate(Var1 = factor(.data$Var1, levels = unique(mat_long$Var1)))
+    dplyr::rename(Var1 = !!rlang::sym("id")) |>
+    dplyr::mutate(Var1 = factor(!!rlang::sym("Var1"), levels = unique(mat_long$Var1)))
   p_col <- ggplot2::ggplot(
-    col_anno, ggplot2::aes(x = .data$Var1, y = 1, fill = .data$cluster)) +
+    col_anno, ggplot2::aes(x = !!rlang::sym("Var1"), y = 1, fill = !!rlang::sym("cluster"))) +
     ggplot2::geom_tile() +
     ggplot2::scale_x_discrete(limits = levels(mat_long$Var1), expand = c(0, 0)) +
     ggplot2::scale_y_discrete(expand = c(0, 0)) +

@@ -1,0 +1,15 @@
+test_that("filter_comparisons() works", {
+  data(rbps)
+  data(adapters)
+  amat <- adapter_matrix(adapters)
+  clusters <- cluster_adapters(amat, k_min = 2, k_max = 5)
+  rbps <- dplyr::left_join(rbps, clusters, by = c("Core_ORF" = "id"))
+  f1 <-  adapters |> filter_comparisons("ON513429-1")
+  f2 <- adapters |> filter_comparisons("MN395291-1") |> filter_comparisons("ON513429-1")
+  f3 <- adapters |> filter_comparisons("ACL 2", filter_by = "cluster", data = rbps)
+
+  expect_true(inherits(f1, "adapter"))
+  expect_equal(dim(f1), c(19, 6))
+  expect_equal(dim(f2), c(1, 6))
+  expect_equal(dim(f3), c(145, 6))
+})

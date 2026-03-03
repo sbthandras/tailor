@@ -7,7 +7,7 @@
 \method{plot}{adapter_matrix}(x, clusters = NULL, ...)
 }
 \arguments{
-\item{x}{adapter_matrix; a matrix of class "adapter_matrix". Use 
+\item{x}{adapter_matrix; a matrix of class "adapter_matrix". Use
 adapter_matrix() to create a compatible matrix.}
 
 \item{clusters}{data.frame; a table of RBP IDs and cluster designations.}

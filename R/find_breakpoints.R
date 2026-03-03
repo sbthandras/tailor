@@ -234,15 +234,19 @@ find_breakpoints_window <- function(
     rep(ngroups + 1, times = nrow(position_scores$position_scores) - window*ngroups)
   )
   ms <- position_scores$position_scores %>%
-    dplyr::group_by(.data$group) %>%
+    dplyr::group_by(!!rlang::sym("group")) %>%
     dplyr::summarise(
       window = dplyr::n(),
-      mean = round(mean(.data$score), 3),
+      mean = round(mean(!!rlang::sym("score")), 3),
       identity_p = suppressWarnings(
-        stats::wilcox.test(as.numeric(.data$identity), alternative = "less", mu = pident_threshold)
+        stats::wilcox.test(
+          as.numeric(!!rlang::sym("identity")), 
+          alternative = "less", mu = pident_threshold)
       )$p.value,
       score_p = suppressWarnings(
-        stats::wilcox.test(.data$score, alternative = "less", mu = score_threshold)
+        stats::wilcox.test(
+          !!rlang::sym("score"), 
+          alternative = "less", mu = score_threshold)
       )$p.value
     )
   ms$pass <- ms$score_p >= p_threshold | ms$identity_p >= p_threshold
