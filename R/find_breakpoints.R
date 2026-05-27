@@ -242,58 +242,102 @@ find_breakpoints_window <- function(
     pident_threshold = 0.4,
     p_threshold = 0.05
 ) {
-  ngroups <- floor(nrow(position_scores$position_scores)/window)
-  position_scores$position_scores$group <- c(
-    rep(1:ngroups, each = window),
-    rep(ngroups + 1, times = nrow(position_scores$position_scores) - window*ngroups)
+  scores <- position_scores$position_scores$score
+  identity <- position_scores$position_scores$identity
+  core <- breakpoints_window_core(
+    scores, 
+    identity,
+    window = window,
+    score_threshold = score_threshold,
+    pident_threshold = pident_threshold,
+    p_threshold = p_threshold
   )
-  ms <- position_scores$position_scores %>%
+  identity <- mapply(
+    function(s, e) round(mean(identity[s:e]), 3), 
+    core$start, core$end, USE.NAMES = FALSE
+  )
+  out <- data.frame(
+    pattern_id = position_scores$pattern_id,
+    subject_id = position_scores$subject_id,
+    start = core$start,
+    end = core$end,
+    mean_score = core$mean_score,
+    pident = identity
+  )
+  return(out)
+}
+
+#' Core algorithm for window method breakpoints
+#' @keywords internal
+#' @param scores numeric vector of alignment scores
+#' @param identity numeric vector of identity values (same length as scores)
+#' @param window integer; size of each sliding window
+#' @param score_threshold numeric; mu threshold for alignment scores
+#' @param pident_threshold numeric; mu threshold for amino acid identities
+#' @param p_threshold numeric; p-value threshold for significance
+#' @return data.frame with columns start, end, mean_score, pident
+breakpoints_window_core <- function(
+    scores, 
+    identity = NULL,
+    window = 5L,
+    score_threshold = 3,
+    pident_threshold = 0.4,
+    p_threshold = 0.05
+  ) {
+  n <- length(scores)
+  ngroups <- floor(n / window)
+  group <- c(
+    rep(1:ngroups, each = window),
+    rep(ngroups + 1, times = n - window * ngroups)
+  )
+  ms <- data.frame(score = scores, group = group)
+  if (!is.null(identity)) {
+    ms$identity <- identity
+  }
+  ms <- ms %>%
     dplyr::group_by(!!rlang::sym("group")) %>%
     dplyr::summarise(
       window = dplyr::n(),
       mean = round(mean(!!rlang::sym("score")), 3),
-      identity_p = suppressWarnings(
-        stats::wilcox.test(
-          as.numeric(!!rlang::sym("identity")), 
-          alternative = "less", mu = pident_threshold)
-      )$p.value,
       score_p = suppressWarnings(
         stats::wilcox.test(
           !!rlang::sym("score"), 
           alternative = "less", mu = score_threshold)
-      )$p.value
+      )$p.value,
+      identity_p = if (!is.null(identity)) {
+        suppressWarnings(
+          stats::wilcox.test(
+            as.numeric(!!rlang::sym("identity")), 
+            alternative = "less", mu = pident_threshold)
+        )$p.value
+      } else {
+        NA_real_
+      },
+      .groups = "drop"
     )
-  ms$pass <- ms$score_p >= p_threshold | ms$identity_p >= p_threshold
+  if (is.null(identity)) {
+    ms$pass <- ms$score_p >= p_threshold
+  } else {
+    ms$pass <- ms$score_p >= p_threshold | ms$identity_p >= p_threshold
+  }
   runlen <- rle(ms$pass)
   if (length(runlen$lengths) == 1) {
-    out <- data.frame(
-      pattern_id = position_scores$pattern_id,
-      subject_id = position_scores$subject_id,
-      start = 1,
-      end = nrow(position_scores$position_scores)
-    )
+    start <- 1L
+    end <- n
   } else {
-    out <- data.frame(
-      pattern_id = position_scores$pattern_id,
-      subject_id = position_scores$subject_id,
-      start = c(
-        1,
-        window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]) + 1
-      ),
-      end = c(
-        window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]),
-        nrow(position_scores$position_scores)
-      )
+    start <- c(
+      1, 
+      window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]) + 1
     )
+    end <- c(window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]), n)
   }
-  out$mean_score <- mapply(
-    function(x, y) round(mean(position_scores$position_scores$score[x:y]), 3),
-    out$start,
-    out$end)
-  out$pident <- mapply(
-    function(x,y) round(mean(position_scores$position_scores$identity[x:y]), 3),
-    out$start,
-    out$end)
-  return(out)
+  data.frame(
+    start = start,
+    end = end,
+    mean_score = mapply(
+      function(s, e) round(mean(scores[s:e]), 3), 
+      start, end, USE.NAMES = FALSE
+    )
+  )
 }
 
