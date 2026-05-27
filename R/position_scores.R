@@ -13,11 +13,18 @@
 #' \code{"BLOSUM45"}, \code{"BLOSUM50"}, \code{"BLOSUM62"}, \code{"BLOSUM80"},
 #' \code{"BLOSUM100"}, \code{"PAM30"}, \code{"PAM40"}, \code{"PAM70"},
 #' \code{"PAM120"}, \code{"PAM250"}.
+#' @param constrain_vars character; optional vector of variable names in 
+#' \code{data} that contain numeric values representing positions which the 
+#' adapters should not overlap with and terminate earlier (e.g., domain 
+#' start positions). See Details for more information.
 #' @param verbose logical; should verbose messages be printed to the console?
 #' @return an object of class \code{ps} which is a list of four elements:
 #' \code{pattern_id}, \code{subject_id}, \code{position_scores} and
 #' \code{substitution_matrix}. \code{position scores} is a tibble that contains
 #' nucleotide or amino acid identities and alignment scores by position.
+#' @details If you provide one or more constrain variables, the function will
+#' look for these in both the pattern and subject rows, calculate their minimum 
+#' and then filter the alignment to only include non overlapping positions. 
 #' @examples
 #' data(rbps)
 #' position_scores("MN395291-1", "ON513429-1", data = rbps)
@@ -29,10 +36,19 @@ position_scores <- function(
     id_var = "Core_ORF",
     seq_var = "translation",
     submat = "BLOSUM80",
+    constrain_vars = NULL,
     verbose = getOption("verbose")
   ) {
   if (!inherits(data, "data.frame")) {
     stop("Argument 'data' must be a data.frame.")
+  }
+  if (!is.null(constrain_vars)) {
+    if (!is.character(constrain_vars)) {
+      stop("Argument 'constrain_vars' must be a character vector or NULL.")
+    }
+    if (!all(constrain_vars %in% names(data))) {
+      stop("All variables in 'constrain_vars' must exist in 'data'.")
+    }
   }
   id_var <- match.arg(id_var, names(data))
   seq_var <- match.arg(seq_var, names(data))
@@ -86,6 +102,12 @@ position_scores <- function(
     identity = identity,
     score = scs
   )
+  if (!is.null(constrain_vars)) {
+    constrain <- min(sapply(constrain_vars, function(x) {
+      c(df[[x]][pat_index_x], df[[x]][seq_index_x])
+    }) |> as.numeric() |> (\(x) x[x != 0])())
+    position_scores <- position_scores[1:(constrain-1),]
+  }
   out <- list(
     pattern_id = pattern_id,
     subject_id = subject_id,

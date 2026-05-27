@@ -11,6 +11,7 @@ position_scores(
   id_var = "Core_ORF",
   seq_var = "translation",
   submat = "BLOSUM80",
+  constrain_vars = NULL,
   verbose = getOption("verbose")
 )
 }
@@ -30,6 +31,11 @@ position_scores(
 \code{"BLOSUM100"}, \code{"PAM30"}, \code{"PAM40"}, \code{"PAM70"},
 \code{"PAM120"}, \code{"PAM250"}.}
 
+\item{constrain_vars}{character; optional vector of variable names in 
+\code{data} that contain numeric values representing positions which the 
+adapters should not overlap with and terminate earlier (e.g., domain 
+start positions). See Details for more information.}
+
 \item{verbose}{logical; should verbose messages be printed to the console?}
 }
 \value{
@@ -43,6 +49,11 @@ This function takes a pair of IDs within a data set, performs a pairwise
 global alignment on their sequences, and returns an object which contains 
 the pattern and subject IDs and a tibble of nucleotide or amino acid 
 identities and alignment scores by position.
+}
+\details{
+If you provide one or more constrain variables, the function will
+look for these in both the pattern and subject rows, calculate their minimum 
+and then filter the alignment to only include non overlapping positions.
 }
 \examples{
 data(rbps)
