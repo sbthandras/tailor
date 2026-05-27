@@ -59,14 +59,18 @@ find_breakpoints_cemean <- function(
   }
   scores <- position_scores$position_scores$score
   identity <- position_scores$position_scores$identity
-  core <- .breakpoints_cemean_core(scores, identity, Nmax = Nmax, seed = seed)
+  core <- breakpoints_cemean_core(scores, Nmax = Nmax, seed = seed)
+  pident <- mapply(
+    function(s, e) round(mean(identity[s:e]), 3),
+    core$start, core$end, USE.NAMES = FALSE
+  )
   bpdf <- data.frame(
     pattern_id = position_scores$pattern_id,
     subject_id = position_scores$subject_id,
     start = core$start,
     end = core$end,
     mean_score = core$mean_score,
-    pident = core$pident
+    pident = pident
   )
   return(bpdf)
 }
@@ -75,11 +79,11 @@ find_breakpoints_cemean <- function(
 #' Core algorithm for Cross-Entropy Method breakpoints
 #' @keywords internal
 #' @param scores numeric vector of alignment scores
-#' @param identity numeric vector of identity values (same length as scores)
 #' @param Nmax integer; maximum number of breakpoints to look for
 #' @param seed integer; random seed
-#' @return list with region_start, region_end, region_mean_score, region_pident
-.breakpoints_cemean_core <- function(scores, identity, Nmax = 5L, seed = 0L) {
+#' @return data.frame with region_start, region_end, region_mean_score
+#' @noRd
+breakpoints_cemean_core <- function(scores, Nmax = 5L, seed = 0L) {
   Nmax <- as.integer(Nmax)
   if (!is.integer(Nmax)) stop("Nmax must be an integer.")
   if (Nmax < 1) stop("Nmax must be a positive integer.")
@@ -92,8 +96,7 @@ find_breakpoints_cemean <- function(
       return(data.frame(
         start = 1L,
         end = length(scores),
-        mean_score = round(mean(scores), 3),
-        pident = round(mean(identity), 3)
+        mean_score = round(mean(scores), 3)
       ))
     } else {
       stop(bps)
@@ -106,15 +109,10 @@ find_breakpoints_cemean <- function(
     function(x, y) round(mean(scores[x:y]), 3),
     region_start, region_end, USE.NAMES = FALSE
   )
-  region_pident <- mapply(
-    function(x, y) round(mean(identity[x:y]), 3),
-    region_start, region_end, USE.NAMES = FALSE
-  )
   return(data.frame(
     start = region_start,
     end = region_end,
-    mean_score = region_mean_score,
-    pident = region_pident
+    mean_score = region_mean_score
   ))
 }
 
