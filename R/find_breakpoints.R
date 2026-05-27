@@ -57,48 +57,65 @@ find_breakpoints_cemean <- function(
   if ("ps" %in% class(position_scores) == FALSE) {
     stop("position_scores must be an object created by position_scores().")
   }
+  scores <- position_scores$position_scores$score
+  identity <- position_scores$position_scores$identity
+  core <- .breakpoints_cemean_core(scores, identity, Nmax = Nmax, seed = seed)
+  bpdf <- data.frame(
+    pattern_id = position_scores$pattern_id,
+    subject_id = position_scores$subject_id,
+    start = core$start,
+    end = core$end,
+    mean_score = core$mean_score,
+    pident = core$pident
+  )
+  return(bpdf)
+}
+
+
+#' Core algorithm for Cross-Entropy Method breakpoints
+#' @keywords internal
+#' @param scores numeric vector of alignment scores
+#' @param identity numeric vector of identity values (same length as scores)
+#' @param Nmax integer; maximum number of breakpoints to look for
+#' @param seed integer; random seed
+#' @return list with region_start, region_end, region_mean_score, region_pident
+.breakpoints_cemean_core <- function(scores, identity, Nmax = 5L, seed = 0L) {
   Nmax <- as.integer(Nmax)
   if (!is.integer(Nmax)) stop("Nmax must be an integer.")
   if (Nmax < 1) stop("Nmax must be a positive integer.")
   seed <- as.integer(seed)
   if (!is.integer(seed)) stop("seed must be an integer")
   set.seed(seed)
-  scores <-  position_scores$position_scores
-  bps <- breakpoint::CE.Normal.Mean(as.data.frame(scores$score), Nmax = Nmax)
+  bps <- breakpoint::CE.Normal.Mean(as.data.frame(scores), Nmax = Nmax)
   if (inherits(bps, "character")){
     if (bps == "No Break-Points are Estimated") {
-      bpdf <- data.frame(
-        pattern_id = position_scores$pattern_id,
-        subject_id = position_scores$subject_id,
-        start = 1,
-        end = nrow(scores),
-        mean_score = round(mean(scores$score), 3),
-        pident = round(mean(scores$identity), 3))
-      return(bpdf)
-    }
-    if (bps == "Error in data : single column dataframe only") {
-      print(paste0(position_scores$pattern_id, " ", position_scores$subject_id))
-      stop()
+      return(data.frame(
+        start = 1L,
+        end = length(scores),
+        mean_score = round(mean(scores), 3),
+        pident = round(mean(identity), 3)
+      ))
+    } else {
+      stop(bps)
     }
   }
   bps <- bps$BP.Loc
-  region_start <- c(1,bps+1)
-  region_end <- c(bps, nrow(scores))
+  region_start <- c(1L, bps + 1L)
+  region_end <- c(bps, length(scores))
   region_mean_score <- mapply(
-    function(x, y) round(mean(scores$score[x:y]), 3),
-    region_start,
-    region_end)
+    function(x, y) round(mean(scores[x:y]), 3),
+    region_start, region_end, USE.NAMES = FALSE
+  )
   region_pident <- mapply(
-    function(x,y) round(mean(scores$identity[x:y]), 3),
-    region_start,
-    region_end)
-  bpdf <- data.frame(
-    pattern_id = position_scores$pattern_id,
-    subject_id = position_scores$subject_id,start = region_start,
+    function(x, y) round(mean(identity[x:y]), 3),
+    region_start, region_end, USE.NAMES = FALSE
+  )
+  return(data.frame(
+    start = region_start,
     end = region_end,
     mean_score = region_mean_score,
-    pident = region_pident)
-  return(bpdf)
+    pident = region_pident
+  ))
 }
 
 #' @rdname find_breakpoints
