@@ -103,10 +103,18 @@ position_scores <- function(
     score = scs
   )
   if (!is.null(constrain_vars)) {
-    constrain <- min(sapply(constrain_vars, function(x) {
+    constrain <- sapply(constrain_vars, function(x) {
       c(df[[x]][pat_index_x], df[[x]][seq_index_x])
-    }) |> as.numeric() |> (\(x) x[x != 0])())
-    position_scores <- position_scores[1:(constrain-1),]
+    }) |> as.numeric() |> unique()
+    if (length(constrain) > 0 && any(constrain == 0)) {
+      constrain <- constrain[-which(constrain == 0)]
+    }
+    if (length(constrain) > 0) {
+      constrain <- min(constrain)[1]
+      if (constrain < nrow(position_scores)) {
+        position_scores <- position_scores[1:(constrain-1),]
+      }
+    }
   }
   out <- list(
     pattern_id = pattern_id,
