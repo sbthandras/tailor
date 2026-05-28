@@ -36,7 +36,7 @@ find_adapter <- function(
     stop(msg)
   }
   class(bps) <- class(bps)[-which(class(bps) == "breakpoints")]
-  if (start_threshold < 0 | start_threshold > 1) {
+  if (start_threshold < 0 || start_threshold > 1) {
     stop("start_threshold must be between 0 and 1.")
   }
   cnts <- bps[bps$pident >= pident_threshold,]
@@ -44,9 +44,13 @@ find_adapter <- function(
     cnts <- data.frame()
   } else {
     # optionally merge consecutive conserved regions
-    if (nrow(cnts) > 1 & merge == TRUE) {
-      for (i in 1:(nrow(cnts)-1)) {
-        if (cnts$end[i]+1 == cnts$start[i+1]) {
+    if (nrow(cnts) > 1 && merge == TRUE) {
+      for (i in seq_len(nrow(cnts) - 1)) {
+        if (
+          !is.na(cnts$end[i]) &&
+          !is.na(cnts$start[i + 1]) &&
+          cnts$end[i] + 1 == cnts$start[i + 1]
+        ) {
           sum_score1 <- (cnts$end[i]-cnts$start[i]+1)*cnts$mean_score[i]
           sum_pident1 <- (cnts$end[i]-cnts$start[i]+1)*cnts$pident[i]
           sum_score2 <- (cnts$end[i+1]-cnts$start[i+1]+1)*cnts$mean_score[i+1]
