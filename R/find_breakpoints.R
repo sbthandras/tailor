@@ -6,6 +6,10 @@
 #' @name find_breakpoints
 #' @param position_scores an object of class `ps`, returned by
 #' `position_scores()`.
+#' @param max_end integer; the maximum position to look for breakpoints. If 
+#' `NULL`, search the full alignment, if an integer, limit the search to that 
+#' position. If both this argument and `position_scores$max_end` are set, the 
+#' smaller integer is used.
 #' @param method character; the method to use for finding breakpoints. Either
 #' "cemean", "plateau", or "window".
 #' @param ... additional arguments depending on the selected method. When
@@ -23,10 +27,34 @@
 #' }
 #' @seealso [position_scores()]
 #' @export
-find_breakpoints <- function(position_scores, method = "cemean", ...) {
+find_breakpoints <- function(
+  position_scores, 
+  max_end = NULL,
+  method = "cemean", 
+  ...
+) {
   if (!inherits(position_scores, "ps")) {
     stop("position_scores must be an object created by position_scores().")
   }
+  scores_df <- position_scores$position_scores
+  n <- nrow(scores_df)
+  if (!is.null(max_end)) {
+    max_end <- as.integer(max_end)
+    if (
+      length(max_end) != 1L || 
+      !is.integer(max_end) || 
+      max_end < 1L || 
+      max_end > n
+    ) {
+      stop(
+        "max_end must be a single integer ",
+        "between 1 and the length of the alignment."
+      )
+    }
+  }
+  limit <- min(c(n, max_end, position_scores$max_end), na.rm = TRUE)
+  # remove alignment positions beyond the limit
+  position_scores$position_scores <- scores_df[seq_len(limit), ]
   method <- match.arg(method, choices = c("cemean", "plateau", "window"))
   f <- get(paste0("find_breakpoints_", method))
   out <- f(position_scores, ...)
@@ -164,6 +192,7 @@ find_breakpoints_plateau <- function(
 #' @param type character; one of cusum, ewma, xbar.one
 #' @param ... additional arguments forwarded to the qcc functions
 #' @return data.frame with columns start, end, mean_score, pident
+#' @noRd
 breakpoints_plateau_core <- function(scores, pinit = 0.05, type = "ewma", ...) {
   init_length <- round(pinit * length(scores), 0)
   center <- mean(scores[1:init_length])
@@ -276,6 +305,7 @@ find_breakpoints_window <- function(
 #' @param pident_threshold numeric; mu threshold for amino acid identities
 #' @param p_threshold numeric; p-value threshold for significance
 #' @return data.frame with columns start, end, mean_score, pident
+#' @noRd
 breakpoints_window_core <- function(
     scores, 
     identity = NULL,
