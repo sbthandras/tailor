@@ -4,18 +4,33 @@
 #' alignment and detects conserved N-terminal regions, optinally merging
 #' neighboring conserved regions.
 #' @param bps data.frame; a data frame of breakpoints
-#' @param pident_threshold numeric; the lowest accepted percentage identity for
-#' a region to be considered a "conserved" region.
-#' @param start_threshold numeric; the highest accepted starting position for
-#' conserved region to be considered an "N-terminal" region, expressed as the
-#' ratio of the aligned sequence length.
-#' @param merge logical; whether neighboring conserved regions should be merged.
+#' @param min_pident numeric; the lowest accepted percentage identity for a 
+#' region to be considered a "conserved" region.
+#' @param max_start integer; the maximum accepted starting position for the 
+#' first conserved region.
+#' @param merge_beginning logical; whether to merge the positions before the 
+#' first conserved region. See Details for more information.
+#' @param merge_conserved logical; whether neighboring conserved regions should 
+#' be merged. See Details for more information.
 #' @return A data frame of class "adapter".
-#' @details The function returns a single row for each pairwise comparison. If
-#' multiple conserved N-terminal regions are identified, the function returns
-#' the first one. If no conserved N-terminal regions are identified, the
-#' function returns a row with NA values for the start, end, mean_score, and
-#' pident columns.
+#' @details The function returns a single row for each pairwise comparison. If 
+#' no conserved N-terminal regions are identified, the function returns a row 
+#' with NA values for the start, end, mean_score, and pident columns. If a 
+#' single conserved N_terminal region is identified, the function returns the 
+#' start and end positions, mean score, and percentage identity of this region. 
+#' If multiple conserved N-terminal regions are identified, behaviour depends on
+#' the values of `merge_conserved` and `merge_beginning`. 
+#' @details If `merge_conserved` is TRUE, neighboring conserved regions will be 
+#' merged and the mean score and percentage identity of the merged region will 
+#' be recalculated. If  `merge_conserved` is FALSE, the function will only keep
+#' the first conserved region.
+#' @details If `merge_beginning` is TRUE, and there is a conserved region 
+#' (merged or unmerged) which starts within `max_start`, but not at position 1, 
+#' then the function will also merge the positions before this conserved region 
+#' and recalculate the mean score and percentage identity of the merged region.
+#' If the percentage identity of the merged region is below `min_pident`, the 
+#' function will drop the merged region and return NA values for the start, end,
+#' mean_score, and pident columns.
 #' @examples
 #' data(rbps)
 #' ps <- position_scores("MN395291-1", "ON513429-1", data = rbps)
@@ -24,9 +39,10 @@
 #' @export
 find_adapter <- function(
     bps,
-    pident_threshold = 0.4,
-    start_threshold = 0.25,
-    merge = TRUE
+    min_pident = 0.4,
+    max_start = 15,
+    merge_beginning = TRUE,
+    merge_conserved = TRUE
   ) {
   if (!inherits(bps, "breakpoints")) {
     msg <- paste0(
@@ -36,48 +52,64 @@ find_adapter <- function(
     stop(msg)
   }
   class(bps) <- class(bps)[-which(class(bps) == "breakpoints")]
-  if (start_threshold < 0 || start_threshold > 1) {
-    stop("start_threshold must be between 0 and 1.")
+  # process conserved regions
+  consreg <- bps[bps$pident >= min_pident,]
+  if (nrow(consreg > 1)) {
+    # merge consecutive conserved regions
+    if (merge_conserved) consreg <- merge_regions(consreg)
+    # if there are still multiple, keep the first
+    consreg <- consreg[1, ]
   }
-  cnts <- bps[bps$pident >= pident_threshold,]
-  if (nrow(cnts) == 0) {
-    cnts <- data.frame()
-  } else {
-    # optionally merge consecutive conserved regions
-    if (nrow(cnts) > 1 && merge == TRUE) {
-      for (i in seq_len(nrow(cnts) - 1)) {
-        if (
-          !is.na(cnts$end[i]) &&
-          !is.na(cnts$start[i + 1]) &&
-          cnts$end[i] + 1 == cnts$start[i + 1]
-        ) {
-          sum_score1 <- (cnts$end[i]-cnts$start[i]+1)*cnts$mean_score[i]
-          sum_pident1 <- (cnts$end[i]-cnts$start[i]+1)*cnts$pident[i]
-          sum_score2 <- (cnts$end[i+1]-cnts$start[i+1]+1)*cnts$mean_score[i+1]
-          sum_pident2 <- (cnts$end[i+1]-cnts$start[i+1]+1)*cnts$pident[i+1]
-          cnts$start[i+1] <- cnts$start[i]
-          cnts[i,] <- NA
-          newlength <- cnts$end[i+1]-cnts$start[i+1]+1
-          cnts$mean_score[i+1] <- round((sum_score1+sum_score2)/newlength, 3)
-          cnts$pident[i+1] <- round((sum_pident1+sum_pident2)/newlength, 3)
-        }
-      }
-      cnts <- cnts[stats::complete.cases(cnts),]
-    }
-    cnt_start_max <- start_threshold*max(bps$end)
-    cnts <- cnts[cnts$start <= cnt_start_max,]
-  }
-  if (nrow(cnts) == 0) {
-    cnts <- data.frame(
+  if (nrow(consreg) == 0 || consreg$start > max_start) {
+    adapter <- data.frame(
       pattern_id = unique(bps$pattern_id),
       subject_id = unique(bps$subject_id),
-      start = NA,
-      end = NA,
-      mean_score = NA,
-      pident = NA
+      start = NA_integer_,
+      end = NA_integer_,
+      mean_score = NA_real_,
+      pident = NA_real_
+    )
+  } else if (consreg$start != 1 && merge_beginning) {
+    adapter <- merge_regions(
+      dplyr::bind_rows(
+        bps[which(bps$end < consreg$start), ], 
+        consreg
+      )
+    )
+  } else {
+    adapter <- consreg
+  }
+  if (!is.na(adapter$pident) && adapter$pident < min_pident) {
+    adapter <- data.frame(
+      pattern_id = unique(bps$pattern_id),
+      subject_id = unique(bps$subject_id),
+      start = NA_integer_,
+      end = NA_integer_,
+      mean_score = NA_real_,
+      pident = NA_real_
     )
   }
-  cnts <- cnts |> dplyr::slice(1)
-  class(cnts) <- c("adapter", class(cnts))
-  return(cnts)
+  class(adapter) <- c("adapter", class(adapter))
+  return(adapter)
+}
+
+merge_regions <- function(df) {
+  for (i in seq_len(nrow(df) - 1)) {
+    if (
+      !is.na(df$end[i]) &&
+      !is.na(df$start[i + 1]) &&
+      df$end[i] + 1 == df$start[i + 1]
+    ) {
+      sum_score1 <- (df$end[i] - df$start[i] + 1) * df$mean_score[i]
+      sum_pident1 <- (df$end[i] - df$start[i] + 1) * df$pident[i]
+      sum_score2 <- (df$end[i + 1] - df$start[i + 1] + 1) * df$mean_score[i + 1]
+      sum_pident2 <- (df$end[i + 1] - df$start[i + 1] + 1) * df$pident[i + 1]
+      df$start[i + 1] <- df$start[i]
+      df[i, ] <- NA
+      newlength <- df$end[i + 1] - df$start[i + 1] + 1
+      df$mean_score[i + 1] <- round((sum_score1 + sum_score2) / newlength, 3)
+      df$pident[i + 1] <- round((sum_pident1 + sum_pident2) / newlength, 3)
+    }
+  }
+  df |> na.omit()
 }
