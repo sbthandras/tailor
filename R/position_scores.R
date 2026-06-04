@@ -105,7 +105,7 @@ position_scores <- function(
   if (!is.null(constrain_vars)) {
     constrain <- sapply(constrain_vars, function(x) {
       c(df[[x]][pat_index_x], df[[x]][seq_index_x])
-    }) |> as.numeric() |> unique()
+    }) |> as.numeric() |> na.omit() |> unique()
     if (length(constrain) > 0 && any(constrain == 0)) {
       constrain <- constrain[-which(constrain == 0)]
     }
