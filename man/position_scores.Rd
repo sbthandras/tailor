@@ -11,7 +11,7 @@ position_scores(
   id_var = "Core_ORF",
   seq_var = "translation",
   submat = "BLOSUM80",
-  constrain_vars = NULL,
+  max_end_vars = NULL,
   verbose = getOption("verbose")
 )
 }
@@ -31,7 +31,7 @@ position_scores(
 \code{"BLOSUM100"}, \code{"PAM30"}, \code{"PAM40"}, \code{"PAM70"},
 \code{"PAM120"}, \code{"PAM250"}.}
 
-\item{constrain_vars}{character; optional vector of variable names in 
+\item{max_end_vars}{character; optional vector of variable names in 
 \code{data} that contain numeric values representing positions which the 
 adapters should not overlap with and terminate earlier (e.g., domain 
 start positions). See Details for more information.}
@@ -39,10 +39,11 @@ start positions). See Details for more information.}
 \item{verbose}{logical; should verbose messages be printed to the console?}
 }
 \value{
-an object of class \code{ps} which is a list of four elements:
+an object of class \code{ps} which is a list with five elements:
 \code{pattern_id}, \code{subject_id}, \code{position_scores} and
-\code{substitution_matrix}. \code{position scores} is a tibble that contains
-nucleotide or amino acid identities and alignment scores by position.
+\code{substitution_matrix}, \code{max_end}. \code{position scores} is a 
+tibble that contains nucleotide or amino acid identities and alignment scores 
+by position.
 }
 \description{
 This function takes a pair of IDs within a data set, performs a pairwise 
@@ -51,11 +52,16 @@ the pattern and subject IDs and a tibble of nucleotide or amino acid
 identities and alignment scores by position.
 }
 \details{
-If you provide one or more constrain variables, the function will
-look for these in both the pattern and subject rows, calculate their minimum 
-and then filter the alignment to only include non overlapping positions.
+If you provide one or more `max_end_var` names, the function will
+look for their values in both the pattern and subject rows, calculate their 
+minimum  and return it in the output object. The value will then be 
+respected by `find_breakpoints()` and the function will not look at 
+positions beyond this value.
 }
 \examples{
 data(rbps)
 position_scores("MN395291-1", "ON513429-1", data = rbps)
+}
+\seealso{
+\code{find_breakpoints()}
 }
