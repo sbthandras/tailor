@@ -71,7 +71,7 @@ adapter_matrix <- function(
           filter_comparisons(ids[i]) |>
           filter_comparisons(ids[j])
         if (nrow(adapter) == 0) {
-          stop("No comparisons found for ids: ", ids[i], ", ", ids[j], ".")
+          dmat[i,j] <- 0
         } else if (nrow(adapter) == 1) {
           dmat[i, j] <- ifelse(is.na(adapter[[value]]), 0, adapter[[value]])
         } else {
@@ -94,7 +94,7 @@ adapter_matrix <- function(
             filter_comparisons(ids[i]) |>
             filter_comparisons(ids[j])
           if (nrow(adapter) == 0) {
-            stop("No comparisons found for ids: ", ids[i], ", ", ids[j], ".")
+            dmat[i,j] <- 0
           } else if (nrow(adapter) == 1) {
             dmat[i, j] <- ifelse(is.na(adapter[[value]]), 0, adapter[[value]])
           } else {
