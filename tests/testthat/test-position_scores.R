@@ -4,7 +4,7 @@ test_that("position_scores",{
   ps <- position_scores(rbps$Core_ORF[1], rbps$Core_ORF[2], data = rbps)
 
   expect_s3_class(ps, c("ps", "list"))
-  expect_length(ps, 4)
+  expect_length(ps, 5)
   expect_type(ps$pattern_id, "character")
   expect_type(ps$subject_id, "character")
   expect_s3_class(ps$position_scores, c("tbl_df", "tbl", "data.frame"))
