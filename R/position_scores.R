@@ -110,14 +110,20 @@ position_scores <- function(
     max_end <- sapply(max_end_vars, function(x) {
       c(df[[x]][pat_index_x], df[[x]][seq_index_x])
     }) |> as.numeric() |> na.omit() |> unique()
-    if (max_end > nrow(position_scores)) {
-      warning(
-        "max_end exceeds the length of the alignment. ",
-        "No constraints will be applied."
-      )
+    max_end <- max_end[max_end != 0]
+    if (length(max_end) == 0) {
       max_end <- NULL
-    }
+    } else {
+      max_end <- min(max_end)
+    } 
   } else {
+    max_end <- NULL
+  }
+  if (!is.null(max_end) && max_end > nrow(position_scores)) {
+    warning(
+      "max_end exceeds the length of the alignment. ",
+      "No constraints will be applied."
+    )
     max_end <- NULL
   }
   out <- list(
