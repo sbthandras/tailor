@@ -38,5 +38,5 @@ Remotes:
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.3.9000
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0.9000

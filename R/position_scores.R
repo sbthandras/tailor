@@ -13,14 +13,25 @@
 #' \code{"BLOSUM45"}, \code{"BLOSUM50"}, \code{"BLOSUM62"}, \code{"BLOSUM80"},
 #' \code{"BLOSUM100"}, \code{"PAM30"}, \code{"PAM40"}, \code{"PAM70"},
 #' \code{"PAM120"}, \code{"PAM250"}.
+#' @param max_end_vars character; optional vector of variable names in 
+#' \code{data} that contain numeric values representing positions which the 
+#' adapters should not overlap with and terminate earlier (e.g., domain 
+#' start positions). See Details for more information.
 #' @param verbose logical; should verbose messages be printed to the console?
-#' @return an object of class \code{ps} which is a list of four elements:
+#' @return an object of class \code{ps} which is a list with five elements:
 #' \code{pattern_id}, \code{subject_id}, \code{position_scores} and
-#' \code{substitution_matrix}. \code{position scores} is a tibble that contains
-#' nucleotide or amino acid identities and alignment scores by position.
+#' \code{substitution_matrix}, \code{max_end}. \code{position scores} is a 
+#' tibble that contains nucleotide or amino acid identities and alignment scores 
+#' by position.
+#' @details If you provide one or more `max_end_var` names, the function will
+#' look for their values in both the pattern and subject rows, calculate their 
+#' minimum  and return it in the output object. The value will then be 
+#' respected by `find_breakpoints()` and the function will not look at 
+#' positions beyond this value.
 #' @examples
 #' data(rbps)
 #' position_scores("MN395291-1", "ON513429-1", data = rbps)
+#' @seealso \code{find_breakpoints()}
 #' @export
 position_scores <- function(
     pattern_id,
@@ -29,10 +40,19 @@ position_scores <- function(
     id_var = "Core_ORF",
     seq_var = "translation",
     submat = "BLOSUM80",
+    max_end_vars = NULL,
     verbose = getOption("verbose")
   ) {
   if (!inherits(data, "data.frame")) {
     stop("Argument 'data' must be a data.frame.")
+  }
+  if (!is.null(max_end_vars)) {
+    if (!is.character(max_end_vars)) {
+      stop("Argument 'max_end_vars' must be a character vector or NULL.")
+    }
+    if (!all(max_end_vars %in% names(data))) {
+      stop("All variables in 'max_end_vars' must exist in 'data'.")
+    }
   }
   id_var <- match.arg(id_var, names(data))
   seq_var <- match.arg(seq_var, names(data))
@@ -86,11 +106,32 @@ position_scores <- function(
     identity = identity,
     score = scs
   )
+  if (!is.null(max_end_vars)) {
+    max_end <- sapply(max_end_vars, function(x) {
+      c(df[[x]][pat_index_x], df[[x]][seq_index_x])
+    }) |> as.numeric() |> na.omit() |> unique()
+    max_end <- max_end[max_end != 0]
+    if (length(max_end) == 0) {
+      max_end <- NULL
+    } else {
+      max_end <- min(max_end)
+    } 
+  } else {
+    max_end <- NULL
+  }
+  if (!is.null(max_end) && max_end > nrow(position_scores)) {
+    warning(
+      "max_end exceeds the length of the alignment. ",
+      "No constraints will be applied."
+    )
+    max_end <- NULL
+  }
   out <- list(
     pattern_id = pattern_id,
     subject_id = subject_id,
     position_scores = position_scores,
-    substitution_matrix = submat
+    substitution_matrix = submat,
+    max_end = max_end
   )
   class(out) <- c("ps", "list")
   return(out)

@@ -6,6 +6,10 @@
 #' @name find_breakpoints
 #' @param position_scores an object of class `ps`, returned by
 #' `position_scores()`.
+#' @param max_end integer; the maximum position to look for breakpoints. If 
+#' `NULL`, search the full alignment, if an integer, limit the search to that 
+#' position. If both this argument and `position_scores$max_end` are set, the 
+#' smaller integer is used.
 #' @param method character; the method to use for finding breakpoints. Either
 #' "cemean", "plateau", or "window".
 #' @param ... additional arguments depending on the selected method. When
@@ -23,10 +27,34 @@
 #' }
 #' @seealso [position_scores()]
 #' @export
-find_breakpoints <- function(position_scores, method = "cemean", ...) {
+find_breakpoints <- function(
+  position_scores, 
+  max_end = NULL,
+  method = "cemean", 
+  ...
+) {
   if (!inherits(position_scores, "ps")) {
     stop("position_scores must be an object created by position_scores().")
   }
+  scores_df <- position_scores$position_scores
+  n <- nrow(scores_df)
+  if (!is.null(max_end)) {
+    max_end <- as.integer(max_end)
+    if (
+      length(max_end) != 1L || 
+      !is.integer(max_end) || 
+      max_end < 1L || 
+      max_end > n
+    ) {
+      stop(
+        "max_end must be a single integer ",
+        "between 1 and the length of the alignment."
+      )
+    }
+  }
+  limit <- min(c(n, max_end, position_scores$max_end), na.rm = TRUE)
+  # remove alignment positions beyond the limit
+  position_scores$position_scores <- scores_df[seq_len(limit), ]
   method <- match.arg(method, choices = c("cemean", "plateau", "window"))
   f <- get(paste0("find_breakpoints_", method))
   out <- f(position_scores, ...)
@@ -57,48 +85,63 @@ find_breakpoints_cemean <- function(
   if ("ps" %in% class(position_scores) == FALSE) {
     stop("position_scores must be an object created by position_scores().")
   }
+  scores <- position_scores$position_scores$score
+  identity <- position_scores$position_scores$identity
+  core <- breakpoints_cemean_core(scores, Nmax = Nmax, seed = seed)
+  pident <- mapply(
+    function(s, e) round(mean(identity[s:e]), 3),
+    core$start, core$end, USE.NAMES = FALSE
+  )
+  bpdf <- data.frame(
+    pattern_id = position_scores$pattern_id,
+    subject_id = position_scores$subject_id,
+    start = core$start,
+    end = core$end,
+    mean_score = core$mean_score,
+    pident = pident
+  )
+  return(bpdf)
+}
+
+
+#' Core algorithm for Cross-Entropy Method breakpoints
+#' @keywords internal
+#' @param scores numeric vector of alignment scores
+#' @param Nmax integer; maximum number of breakpoints to look for
+#' @param seed integer; random seed
+#' @return data.frame with region_start, region_end, region_mean_score
+#' @noRd
+breakpoints_cemean_core <- function(scores, Nmax = 5L, seed = 0L) {
   Nmax <- as.integer(Nmax)
   if (!is.integer(Nmax)) stop("Nmax must be an integer.")
   if (Nmax < 1) stop("Nmax must be a positive integer.")
   seed <- as.integer(seed)
   if (!is.integer(seed)) stop("seed must be an integer")
   set.seed(seed)
-  scores <-  position_scores$position_scores
-  bps <- breakpoint::CE.Normal.Mean(as.data.frame(scores$score), Nmax = Nmax)
+  bps <- breakpoint::CE.Normal.Mean(as.data.frame(scores), Nmax = Nmax)
   if (inherits(bps, "character")){
     if (bps == "No Break-Points are Estimated") {
-      bpdf <- data.frame(
-        pattern_id = position_scores$pattern_id,
-        subject_id = position_scores$subject_id,
-        start = 1,
-        end = nrow(scores),
-        mean_score = round(mean(scores$score), 3),
-        pident = round(mean(scores$identity), 3))
-      return(bpdf)
-    }
-    if (bps == "Error in data : single column dataframe only") {
-      print(paste0(position_scores$pattern_id, " ", position_scores$subject_id))
-      stop()
+      return(data.frame(
+        start = 1L,
+        end = length(scores),
+        mean_score = round(mean(scores), 3)
+      ))
+    } else {
+      stop(bps)
     }
   }
   bps <- bps$BP.Loc
-  region_start <- c(1,bps+1)
-  region_end <- c(bps, nrow(scores))
+  region_start <- c(1L, bps + 1L)
+  region_end <- c(bps, length(scores))
   region_mean_score <- mapply(
-    function(x, y) round(mean(scores$score[x:y]), 3),
-    region_start,
-    region_end)
-  region_pident <- mapply(
-    function(x,y) round(mean(scores$identity[x:y]), 3),
-    region_start,
-    region_end)
-  bpdf <- data.frame(
-    pattern_id = position_scores$pattern_id,
-    subject_id = position_scores$subject_id,start = region_start,
+    function(x, y) round(mean(scores[x:y]), 3),
+    region_start, region_end, USE.NAMES = FALSE
+  )
+  return(data.frame(
+    start = region_start,
     end = region_end,
-    mean_score = region_mean_score,
-    pident = region_pident)
-  return(bpdf)
+    mean_score = region_mean_score
+  ))
 }
 
 #' @rdname find_breakpoints
@@ -107,10 +150,10 @@ find_breakpoints_cemean <- function(
 #' @param type character; the type of statistical process control chart to use.
 #' Currently supported cards are `cusum`, `ewma` and `xbar.one`.
 #' @details When using `method = "plateau"` the function will look at the first
-#' few positions of the alignment (goverened by `pinit`) and calculate a mean
+#' few positions of the alignment (governed by `pinit`) and calculate a mean
 #' score. This mean score will be used as the center: 1. it will be used as the
 #' center point for a number of control charts; 2. any scores above the center
-#' will be reduced to be indentical with the center. Then the function will use
+#' will be reduced to be identical with the center. Then the function will use
 #' the control chart selected by `type`, and extract sections using the
 #' violations.
 #' @examples
@@ -124,22 +167,40 @@ find_breakpoints_plateau <- function(
     type = "ewma",
     ...
     ) {
-
-  init_length <- round(pinit*length(position_scores$position_scores$score), 0)
-  center <- mean(position_scores$position_scores$score[1:init_length])
-
-  type <- match.arg(type, choices = c("cusum", "ewma", "xbar.one"))
-
-  # adjust position scores to plateau
-  position_scores$position_scores$score <- ifelse(
-    position_scores$position_scores$score > center,
-    center,
-    position_scores$position_scores$score
+  scores <- position_scores$position_scores$score
+  identity <- position_scores$position_scores$identity
+  core <- breakpoints_plateau_core(scores, pinit = pinit, type = type, ...)
+  pident <- mapply(
+    function(s, e) round(mean(identity[s:e]), 3), 
+    core$start, core$end, USE.NAMES = FALSE
   )
+  bpdf <- data.frame(
+    pattern_id = position_scores$pattern_id,
+    subject_id = position_scores$subject_id,
+    start = core$start,
+    end = core$end,
+    mean_score = core$mean_score,
+    pident = pident
+  )
+  return(bpdf)
+}
 
+#' Core algorithm for plateau method breakpoints
+#' @keywords internal
+#' @param scores numeric vector of alignment scores
+#' @param pinit numeric; fraction of the sequence used to set the centre
+#' @param type character; one of cusum, ewma, xbar.one
+#' @param ... additional arguments forwarded to the qcc functions
+#' @return data.frame with columns start, end, mean_score, pident
+#' @noRd
+breakpoints_plateau_core <- function(scores, pinit = 0.05, type = "ewma", ...) {
+  init_length <- round(pinit * length(scores), 0)
+  center <- mean(scores[1:init_length])
+  scores_plateau <- ifelse(scores > center, center, scores)
+  type <- match.arg(type, choices = c("cusum", "ewma", "xbar.one"))
   if (type == "xbar.one") {
     spc <- qcc::qcc(
-      position_scores$position_scores$score,
+      scores_plateau,
       type = "xbar.one",
       center = center,
       plot = FALSE,
@@ -149,7 +210,7 @@ find_breakpoints_plateau <- function(
     violations <- sort(unique(violations))
   } else if (type == "ewma") {
     spc <- qcc::ewma(
-      position_scores$position_scores$score,
+      scores_plateau,
       center = center,
       plot = FALSE,
       ...
@@ -157,51 +218,33 @@ find_breakpoints_plateau <- function(
     violations <- sort(unname(spc$violations))
   } else if (type == "cusum") {
     spc <- qcc::cusum(
-      position_scores$position_scores$score,
+      scores_plateau,
       center = center,
       plot = FALSE,
       ...
     )
     violations <- sort(unique(spc$violations$lower))
   }
-  position_scores$position_scores$pass <- sapply(1:nrow(position_scores$position_scores), function(x) {
-    if (x %in% violations) {
-      return(FALSE)
-    } else {
-      return(TRUE)
-    }
-  }) |> unname()
-
-  runlen <- rle(position_scores$position_scores$pass)
+  pass <- !(seq_along(scores) %in% violations)
+  runlen <- rle(pass)
   if (length(runlen$lengths) == 1) {
-    out <- data.frame(
-      pattern_id = position_scores$pattern_id,
-      subject_id = position_scores$subject_id,
-      start = 1,
-      end = nrow(position_scores$position_scores)
-    )
+    start <- 1L
+    end <- length(scores)
   } else {
-    out <- data.frame(
-      pattern_id = position_scores$pattern_id,
-      subject_id = position_scores$subject_id,
-      start = c(
-        1, cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]) + 1
-      ),
-      end = c(
-        cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]),
-        nrow(position_scores$position_scores)
-      )
+    start <- c(1, cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]) + 1)
+    end <- c(
+      cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]),
+      length(scores)
     )
   }
-  out$mean_score <- mapply(
-    function(x, y) round(mean(position_scores$position_scores$score[x:y]), 3),
-    out$start,
-    out$end)
-  out$pident <- mapply(
-    function(x,y) round(mean(position_scores$position_scores$identity[x:y]), 3),
-    out$start,
-    out$end)
-  return(out)
+  data.frame(
+    start = start,
+    end = end,
+    mean_score = mapply(
+      function(s, e) round(mean(scores[s:e]), 3), 
+      start, end, USE.NAMES = FALSE
+    )
+  )
 }
 
 #' @rdname find_breakpoints
@@ -228,58 +271,103 @@ find_breakpoints_window <- function(
     pident_threshold = 0.4,
     p_threshold = 0.05
 ) {
-  ngroups <- floor(nrow(position_scores$position_scores)/window)
-  position_scores$position_scores$group <- c(
-    rep(1:ngroups, each = window),
-    rep(ngroups + 1, times = nrow(position_scores$position_scores) - window*ngroups)
+  scores <- position_scores$position_scores$score
+  identity <- position_scores$position_scores$identity
+  core <- breakpoints_window_core(
+    scores, 
+    identity,
+    window = window,
+    score_threshold = score_threshold,
+    pident_threshold = pident_threshold,
+    p_threshold = p_threshold
   )
-  ms <- position_scores$position_scores %>%
+  identity <- mapply(
+    function(s, e) round(mean(identity[s:e]), 3), 
+    core$start, core$end, USE.NAMES = FALSE
+  )
+  out <- data.frame(
+    pattern_id = position_scores$pattern_id,
+    subject_id = position_scores$subject_id,
+    start = core$start,
+    end = core$end,
+    mean_score = core$mean_score,
+    pident = identity
+  )
+  return(out)
+}
+
+#' Core algorithm for window method breakpoints
+#' @keywords internal
+#' @param scores numeric vector of alignment scores
+#' @param identity numeric vector of identity values (same length as scores)
+#' @param window integer; size of each sliding window
+#' @param score_threshold numeric; mu threshold for alignment scores
+#' @param pident_threshold numeric; mu threshold for amino acid identities
+#' @param p_threshold numeric; p-value threshold for significance
+#' @return data.frame with columns start, end, mean_score, pident
+#' @noRd
+breakpoints_window_core <- function(
+    scores, 
+    identity = NULL,
+    window = 5L,
+    score_threshold = 3,
+    pident_threshold = 0.4,
+    p_threshold = 0.05
+  ) {
+  n <- length(scores)
+  ngroups <- floor(n / window)
+  group <- c(
+    rep(1:ngroups, each = window),
+    rep(ngroups + 1, times = n - window * ngroups)
+  )
+  ms <- data.frame(score = scores, group = group)
+  if (!is.null(identity)) {
+    ms$identity <- identity
+  }
+  ms <- ms %>%
     dplyr::group_by(!!rlang::sym("group")) %>%
     dplyr::summarise(
       window = dplyr::n(),
       mean = round(mean(!!rlang::sym("score")), 3),
-      identity_p = suppressWarnings(
-        stats::wilcox.test(
-          as.numeric(!!rlang::sym("identity")), 
-          alternative = "less", mu = pident_threshold)
-      )$p.value,
       score_p = suppressWarnings(
         stats::wilcox.test(
           !!rlang::sym("score"), 
           alternative = "less", mu = score_threshold)
-      )$p.value
+      )$p.value,
+      identity_p = if (!is.null(identity)) {
+        suppressWarnings(
+          stats::wilcox.test(
+            as.numeric(!!rlang::sym("identity")), 
+            alternative = "less", mu = pident_threshold)
+        )$p.value
+      } else {
+        NA_real_
+      },
+      .groups = "drop"
     )
-  ms$pass <- ms$score_p >= p_threshold | ms$identity_p >= p_threshold
+  if (is.null(identity)) {
+    ms$pass <- ms$score_p >= p_threshold
+  } else {
+    ms$pass <- ms$score_p >= p_threshold | ms$identity_p >= p_threshold
+  }
   runlen <- rle(ms$pass)
   if (length(runlen$lengths) == 1) {
-    out <- data.frame(
-      pattern_id = position_scores$pattern_id,
-      subject_id = position_scores$subject_id,
-      start = 1,
-      end = nrow(position_scores$position_scores)
-    )
+    start <- 1L
+    end <- n
   } else {
-    out <- data.frame(
-      pattern_id = position_scores$pattern_id,
-      subject_id = position_scores$subject_id,
-      start = c(
-        1,
-        window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]) + 1
-      ),
-      end = c(
-        window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]),
-        nrow(position_scores$position_scores)
-      )
+    start <- c(
+      1, 
+      window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]) + 1
     )
+    end <- c(window * cumsum(runlen$lengths[1:(length(runlen$lengths)-1)]), n)
   }
-  out$mean_score <- mapply(
-    function(x, y) round(mean(position_scores$position_scores$score[x:y]), 3),
-    out$start,
-    out$end)
-  out$pident <- mapply(
-    function(x,y) round(mean(position_scores$position_scores$identity[x:y]), 3),
-    out$start,
-    out$end)
-  return(out)
+  data.frame(
+    start = start,
+    end = end,
+    mean_score = mapply(
+      function(s, e) round(mean(scores[s:e]), 3), 
+      start, end, USE.NAMES = FALSE
+    )
+  )
 }
 

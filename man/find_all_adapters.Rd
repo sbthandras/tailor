@@ -10,10 +10,13 @@ find_all_adapters(
   id_var = "Core_ORF",
   seq_var = "translation",
   submat = "BLOSUM80",
+  max_end_vars = NULL,
+  max_end = NULL,
   method = "cemean",
-  pident_threshold = 0.4,
-  start_threshold = 0.25,
-  merge = TRUE,
+  min_pident = 0.4,
+  max_start = 10,
+  merge_beginning = TRUE,
+  merge_conserved = TRUE,
   cores = 1,
   verbose = getOption("verbose"),
   ...
@@ -31,18 +34,31 @@ find_all_adapters(
 \item{submat}{character; the substitution matrix. See
 \code{position_scores()} for more information.}
 
+\item{max_end_vars}{character; optional vector of variable names in
+\code{data} that contain numeric values representing positions which the
+adapters should not overlap with and terminate earlier (e.g., domain
+start positions). See Details for more information.}
+
+\item{max_end}{integer; the maximum position to look for breakpoints. If 
+`NULL`, search the full alignment, if an integer, limit the search to that 
+position. If both this argument and `position_scores$max_end` are set, the 
+smaller integer is used.}
+
 \item{method}{character; the method to use for finding breakpoints. Either
 "cemean", "plateau", or "window". See \code{find_breakpoints()} for more
 information}
 
-\item{pident_threshold}{numeric; the lowest accepted percentage identity for
-a region to be considered a "conserved" region.}
+\item{min_pident}{numeric; the lowest accepted percentage identity for a
+region to be considered a "conserved" region.}
 
-\item{start_threshold}{numeric; the highest accepted starting position for
-conserved region to be considered an "N-terminal" region, expressed as the
-ratio of the aligned sequence length.}
+\item{max_start}{integer; the maximum accepted starting position for the
+first conserved region.}
 
-\item{merge}{logical; whether neighboring conserved regions should be merged.}
+\item{merge_beginning}{logical; whether to merge the positions before the
+first conserved region. See Details for more information.}
+
+\item{merge_conserved}{logical; whether neighboring conserved regions should
+be merged. See Details for more information.}
 
 \item{cores}{integer; number of CPU cores to use.}
 
@@ -57,6 +73,13 @@ A data.frame of class "adapter".
 \description{
 Look at all pairs between a set of RBPs, align, detect breakpoints, find
 adapters and combine them into a single data frame.
+}
+\details{
+If you provide one or more `max_end_var` names, the function will
+look for their values in both the pattern and subject rows, calculate their
+minimum  and return it in the output object. The value will then be
+respected by `find_breakpoints()` and the function will not look at
+positions beyond this value.
 }
 \examples{
 data(rbps)

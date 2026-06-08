@@ -7,7 +7,7 @@
 \alias{find_breakpoints_window}
 \title{Find breakpoints in global alignment scores}
 \usage{
-find_breakpoints(position_scores, method = "cemean", ...)
+find_breakpoints(position_scores, max_end = NULL, method = "cemean", ...)
 
 find_breakpoints_cemean(position_scores, Nmax = 5, seed = 0)
 
@@ -24,6 +24,11 @@ find_breakpoints_window(
 \arguments{
 \item{position_scores}{an object of class `ps`, returned by
 `position_scores()`.}
+
+\item{max_end}{integer; the maximum position to look for breakpoints. If 
+`NULL`, search the full alignment, if an integer, limit the search to that 
+position. If both this argument and `position_scores$max_end` are set, the 
+smaller integer is used.}
 
 \item{method}{character; the method to use for finding breakpoints. Either
 "cemean", "plateau", or "window".}
@@ -74,10 +79,10 @@ method will use the `CE.Normal.Mean()` function from the `breakpoint` package
 to find the breakpoints.
 
 When using `method = "plateau"` the function will look at the first
-few positions of the alignment (goverened by `pinit`) and calculate a mean
+few positions of the alignment (governed by `pinit`) and calculate a mean
 score. This mean score will be used as the center: 1. it will be used as the
 center point for a number of control charts; 2. any scores above the center
-will be reduced to be indentical with the center. Then the function will use
+will be reduced to be identical with the center. Then the function will use
 the control chart selected by `type`, and extract sections using the
 violations.
 

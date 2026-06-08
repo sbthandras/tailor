@@ -8,7 +8,7 @@
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R build
 status](https://github.com/sbthandras/tailor/workflows/R-CMD-check/badge.svg)](https://github.com/sbthandras/tailor/actions)
-[![Coverage](https://img.shields.io/badge/coverage-92.9%25-brightgreen)](#test-coverage)
+[![Coverage](https://img.shields.io/badge/coverage-89.9%25-yellow)](#test-coverage)
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.20.706991-blue)](https://doi.org/10.64898/2026.02.20.706991)
 
 <!-- badges: end -->
@@ -72,7 +72,7 @@ adapter <- find_adapter(bps)
 
 adapter
 #>   pattern_id subject_id start end mean_score pident
-#> 1 MN395291-1 ON513429-1     1 172      4.878  0.901
+#> 2 MN395291-1 ON513429-1     1 172      4.878  0.901
 ```
 
 Note, for positions 1-152 and 153-172 the scores were quite different,
@@ -95,7 +95,7 @@ result:
 ``` r
 ps |> find_breakpoints(method = "plateau", type = "ewma") |> find_adapter()
 #>   pattern_id subject_id start end mean_score pident
-#> 1 MN395291-1 ON513429-1     1 157      4.656  0.936
+#> 1 MN395291-1 ON513429-1     1 157       5.07  0.936
 ```
 
 Note that with this method we detect a shorter conserved N-terminal
