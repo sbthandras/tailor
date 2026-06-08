@@ -8,11 +8,15 @@
 #' @param mat adapter_matrix; a matrix of class "adapter_matrix". Use
 #' adapter_matrix() to create a compatible matrix.
 #' @param k integer; the number of clusters to split the RBPs into.
+#' @param h hclust object; a hierarchical clustering object created from the 
+#' distance matrix. If NULL, the function will create a hierarchical clustering 
+#' object from the input matrix using the average method.
 #' @param homogeneity_thr numeric; minimum percentage identity of the identified
 #' adapter sequence to be considered a shared adapter for homogeneity.
 #' @param completeness_thr numeric; minimum percentage identity of the
 #' identified adapter sequence to be considered a shared adapter for
 #' completeness.
+#' @param verbose logical; should verbose messages be printed to the console?
 #' @return A data frame with 6 columns: nclust (number of clusters requested),
 #' cluster (cluser identifier), homogeneity (homogeneity score for the cluster),
 #' completeness (completeness score for the cluster), schoco (sum of weighted
@@ -30,8 +34,10 @@
 schoco <- function(
     mat,
     k,
+    h = NULL,
     homogeneity_thr = 0.75,
-    completeness_thr = 0.75
+    completeness_thr = 0.75,
+    verbose = getOption("verbose")
   ) {
   if (!inherits(mat, "adapter_matrix")) {
     msg <- paste0(
@@ -40,7 +46,10 @@ schoco <- function(
     )
     stop(msg)
   }
-  h <- mat |> stats::dist() |> stats::hclust(method = "average")
+  if (is.null(h)) {
+    if (verbose) message("Running hierarchical clustering.")
+    h <- mat |> stats::dist() |> stats::hclust(method = "average")
+  }
   cluster <- paste0("ACL ", stats::cutree(tree = h, k = k))
   unique_clusters <- unique(cluster)
   df <- data.frame()

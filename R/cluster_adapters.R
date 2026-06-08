@@ -4,12 +4,17 @@
 #' adapter_matrix() to create a compatible matrix.
 #' @param k_min integer; minimum number of clusters to split the RBPs into.
 #' @param k_max integer; maximum number of clusters to split the RBPs into.
+#' @param h hclust object; a hierarchical clustering object created from the 
+#' distance matrix. If NULL, the function will create a hierarchical clustering 
+#' object from the input matrix using the average method.
 #' @param homogeneity_thr numeric; minimum percentage identity of the identified
 #' adapter sequence to be considered a shared adapter for homogeneity.
 #' @param completeness_thr numeric; minimum percentage identity of the
 #' identified adapter sequence to be considered a shared adapter for
 #' completeness.
 #' @param cores integer; number of CPU cores to use.
+#' @param verbose logical; should verbose messages be printed to the console?
+#' If TRUE, a progress bar is also displayed.
 #' @return a data frame with two columns, id and cluster, containing cluster
 #' assignments.
 #' @examples
@@ -25,9 +30,11 @@ cluster_adapters <- function(
     mat,
     k_min = 1,
     k_max = NULL,
+    h = NULL,
     homogeneity_thr = 0.75,
     completeness_thr = 0.75,
-    cores = 1
+    cores = 1,
+    verbose = getOption("verbose")
   ) {
   if (!inherits(mat, "adapter_matrix")) {
     msg <- paste0(
@@ -36,25 +43,35 @@ cluster_adapters <- function(
     )
     stop(msg)
   }
-  h <- mat |> stats::dist() |> stats::hclust(method = "average")
-
+  if (is.null(h)) {
+    if (verbose) message("Running hierarchical clustering.")
+    h <- mat |> stats::dist() |> stats::hclust(method = "average")
+  }
   if (is.null(k_max)) k_max <- nrow(mat)
-
+  if (verbose) message("Optimising number of clusters.")
   if (cores == 1) {
-    # Use regular for loop when cores = 1
+    if (verbose) {
+      pb <- utils::txtProgressBar(
+        min = 0,
+        max = length(k_min:k_max),
+        style = 3
+      )
+    }
     schocos_list <- list()
     for (k in k_min:k_max) {
-      schocos_list[[length(schocos_list) + 1]] <- schoco(mat, k, homogeneity_thr, completeness_thr)
+      schocos_list[[length(schocos_list) + 1]] <- schoco(
+        mat, k, h, homogeneity_thr, completeness_thr, verbose = FALSE
+      )
+      if (verbose) utils::setTxtProgressBar(pb, k)
     }
+    if (verbose) close(pb)
     schocos <- do.call(rbind, schocos_list)
   } else {
-    # Use parallelization when cores > 1
     cl <- parallel::makeCluster(cores, type = "PSOCK")
     doParallel::registerDoParallel(cl)
     on.exit(parallel::stopCluster(cl), add = TRUE)
-
     schocos <- foreach::foreach(k = k_min:k_max, .combine = 'rbind') %dopar% {
-      schoco(mat, k, homogeneity_thr, completeness_thr)
+      schoco(mat, k, h, homogeneity_thr, completeness_thr, verbose = FALSE)
     }
   }
 
