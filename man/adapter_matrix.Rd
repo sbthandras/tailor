@@ -4,7 +4,12 @@
 \alias{adapter_matrix}
 \title{Create adapter matrix}
 \usage{
-adapter_matrix(adapters, ids = NULL, value = "pident", cores = 1)
+adapter_matrix(
+  adapters,
+  ids = NULL,
+  value = "pident",
+  verbose = getOption("verbose")
+)
 }
 \arguments{
 \item{adapters}{adapter; a data frame of class "adapter" containing
@@ -19,7 +24,8 @@ in the 'adapters' data frame must be present in the 'ids' vector.}
 \item{value}{character; the variable within the adapter data frame to use as
 values in the matrix, "pident", "mean_score", or "end".}
 
-\item{cores}{integer; number of CPU cores to use.}
+\item{verbose}{logical; should verbose messages be printed to the console?
+If TRUE, a progress bar is also displayed.}
 }
 \description{
 Convert identified adapters into matrix form.
@@ -27,8 +33,8 @@ Convert identified adapters into matrix form.
 \note{
 The function handles incomplete adapter data frames where some sequence
 pairs are missing. Missing pairs are assumed to lack shared adapters and are
-filled with 0 values in the matrix. However, sequences with no shared 
-adapters across any pair are not recoverable if they were dropped from the 
+filled with 0 values in the matrix. However, sequences with no shared
+adapters across any pair are not recoverable if they were dropped from the
 data frame.
 }
 \examples{

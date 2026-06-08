@@ -11,11 +11,12 @@
 #' in the 'adapters' data frame must be present in the 'ids' vector.
 #' @param value character; the variable within the adapter data frame to use as
 #' values in the matrix, "pident", "mean_score", or "end".
-#' @param cores integer; number of CPU cores to use.
+#' @param verbose logical; should verbose messages be printed to the console?
+#' If TRUE, a progress bar is also displayed.
 #' @note The function handles incomplete adapter data frames where some sequence
 #' pairs are missing. Missing pairs are assumed to lack shared adapters and are
-#' filled with 0 values in the matrix. However, sequences with no shared 
-#' adapters across any pair are not recoverable if they were dropped from the 
+#' filled with 0 values in the matrix. However, sequences with no shared
+#' adapters across any pair are not recoverable if they were dropped from the
 #' data frame.
 #' @examples
 #' # import example data
@@ -32,7 +33,7 @@ adapter_matrix <- function(
     adapters,
     ids = NULL,
     value = "pident",
-    cores = 1
+    verbose = getOption("verbose")
   ) {
   if (!inherits(adapters, "adapter")) {
     msg <- paste0(
@@ -62,54 +63,33 @@ adapter_matrix <- function(
     }
   }
   value <- match.arg(value, c("pident", "mean_score", "end"))
-  
-  dmat <- matrix(NA, nrow = length(ids), ncol = length(ids))
+
+  dmat <- matrix(0, nrow = length(ids), ncol = length(ids))
   rownames(dmat) = ids
   colnames(dmat) = ids
-  
-  if (cores == 1) {
-    # Use regular for loop when cores = 1
-    for (i in seq_len(nrow(dmat))) {
-      for (j in seq_len(ncol(dmat))) {
-        if (i == j) next()
-        adapter <- adapters |>
-          filter_comparisons(ids[i]) |>
-          filter_comparisons(ids[j])
-        if (nrow(adapter) == 0) {
-          dmat[i,j] <- 0
-        } else if (nrow(adapter) == 1) {
-          dmat[i, j] <- ifelse(is.na(adapter[[value]]), 0, adapter[[value]])
-        } else {
-          stop("Multiple comparisons found for ids: ", ids[i], ", ", ids[j], ".")
-        }
-      }
-    }
-  } else {
-    # Use parallelization when cores > 1
-    cl <- parallel::makeCluster(cores, type = "PSOCK")
-    doParallel::registerDoParallel(cl)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-    
-    dmat <- foreach::foreach(
-      i = seq_len(nrow(dmat)), .combine = 'rbind', .inorder = TRUE) %dopar% {
-        i <- i
-        for (j in seq_len(ncol(dmat))) {
-          if (i == j) next()
-          adapter <- adapters |>
-            filter_comparisons(ids[i]) |>
-            filter_comparisons(ids[j])
-          if (nrow(adapter) == 0) {
-            dmat[i,j] <- 0
-          } else if (nrow(adapter) == 1) {
-            dmat[i, j] <- ifelse(is.na(adapter[[value]]), 0, adapter[[value]])
-          } else {
-            stop("Multiple comparisons found for ids: ", ids[i], ", ", ids[j], ".")
-          }
-        }
-        return(dmat[i, ])
-      }
+  if (verbose) {
+    pb <- utils::txtProgressBar(
+      min = 0,
+      max = nrow(adapters),
+      style = 3
+    )
   }
-  
+  for (i in seq_len(nrow(adapters))) {
+    index_x <- which(ids == adapters$pattern_id[i])
+    index_y <- which(ids == adapters$subject_id[i])
+    hit <- ifelse(is.na(adapters[[value]][i]), 0, adapters[[value]][i])
+    if (length(hit) > 1) {
+      stop(
+        "Multiple values found for ids: ",
+        adapters$pattern_id[i],
+        ", ", adapters$subject_id[i], "."
+      )
+    }
+    dmat[index_x, index_y] <- hit
+    dmat[index_y, index_x] <- hit
+    if (verbose) utils::setTxtProgressBar(pb, i)
+  }
+  if (verbose) close(pb)
   if (value == "pident") diag(dmat) <- 1
   rownames(dmat) <- ids
   colnames(dmat) <- ids
