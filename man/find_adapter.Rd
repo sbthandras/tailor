@@ -7,7 +7,7 @@
 find_adapter(
   bps,
   min_pident = 0.4,
-  max_start = 15,
+  max_start = 10,
   merge_beginning = TRUE,
   merge_conserved = TRUE
 )
@@ -15,16 +15,16 @@ find_adapter(
 \arguments{
 \item{bps}{data.frame; a data frame of breakpoints}
 
-\item{min_pident}{numeric; the lowest accepted percentage identity for a 
+\item{min_pident}{numeric; the lowest accepted percentage identity for a
 region to be considered a "conserved" region.}
 
-\item{max_start}{integer; the maximum accepted starting position for the 
+\item{max_start}{integer; the maximum accepted starting position for the
 first conserved region.}
 
-\item{merge_beginning}{logical; whether to merge the positions before the 
+\item{merge_beginning}{logical; whether to merge the positions before the
 first conserved region. See Details for more information.}
 
-\item{merge_conserved}{logical; whether neighboring conserved regions should 
+\item{merge_conserved}{logical; whether neighboring conserved regions should
 be merged. See Details for more information.}
 }
 \value{
@@ -36,24 +36,24 @@ alignment and detects conserved N-terminal regions, optinally merging
 neighboring conserved regions.
 }
 \details{
-The function returns a single row for each pairwise comparison. If 
-no conserved N-terminal regions are identified, the function returns a row 
-with NA values for the start, end, mean_score, and pident columns. If a 
-single conserved N_terminal region is identified, the function returns the 
-start and end positions, mean score, and percentage identity of this region. 
+The function returns a single row for each pairwise comparison. If
+no conserved N-terminal regions are identified, the function returns a row
+with NA values for the start, end, mean_score, and pident columns. If a
+single conserved N_terminal region is identified, the function returns the
+start and end positions, mean score, and percentage identity of this region.
 If multiple conserved N-terminal regions are identified, behaviour depends on
 the values of `merge_conserved` and `merge_beginning`.
 
-If `merge_conserved` is TRUE, neighboring conserved regions will be 
-merged and the mean score and percentage identity of the merged region will 
+If `merge_conserved` is TRUE, neighboring conserved regions will be
+merged and the mean score and percentage identity of the merged region will
 be recalculated. If  `merge_conserved` is FALSE, the function will only keep
 the first conserved region.
 
-If `merge_beginning` is TRUE, and there is a conserved region 
-(merged or unmerged) which starts within `max_start`, but not at position 1, 
-then the function will also merge the positions before this conserved region 
+If `merge_beginning` is TRUE, and there is a conserved region
+(merged or unmerged) which starts within `max_start`, but not at position 1,
+then the function will also merge the positions before this conserved region
 and recalculate the mean score and percentage identity of the merged region.
-If the percentage identity of the merged region is below `min_pident`, the 
+If the percentage identity of the merged region is below `min_pident`, the
 function will drop the merged region and return NA values for the start, end,
 mean_score, and pident columns.
 }
