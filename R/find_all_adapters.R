@@ -8,20 +8,35 @@
 #' @param seq_var character; variable within \code{data} that stores sequences.
 #' @param submat character; the substitution matrix. See
 #' \code{position_scores()} for more information.
+#' @param max_end_vars character; optional vector of variable names in
+#' \code{data} that contain numeric values representing positions which the
+#' adapters should not overlap with and terminate earlier (e.g., domain
+#' start positions). See Details for more information.
+#' @param max_end integer; the maximum position to look for breakpoints. If
+#' `NULL`, search the full alignment, if an integer, limit the search to that
+#' position. If both this argument and `position_scores$max_end` are set, the
+#' smaller integer is used.
 #' @param method character; the method to use for finding breakpoints. Either
 #' "cemean", "plateau", or "window". See \code{find_breakpoints()} for more
 #' information
-#' @param pident_threshold numeric; the lowest accepted percentage identity for
-#' a region to be considered a "conserved" region.
-#' @param start_threshold numeric; the highest accepted starting position for
-#' conserved region to be considered an "N-terminal" region, expressed as the
-#' ratio of the aligned sequence length.
-#' @param merge logical; whether neighboring conserved regions should be merged.
+#' @param min_pident numeric; the lowest accepted percentage identity for a
+#' region to be considered a "conserved" region.
+#' @param max_start integer; the maximum accepted starting position for the
+#' first conserved region.
+#' @param merge_beginning logical; whether to merge the positions before the
+#' first conserved region. See Details for more information.
+#' @param merge_conserved logical; whether neighboring conserved regions should
+#' be merged. See Details for more information.
 #' @param cores integer; number of CPU cores to use.
 #' @param verbose logical; should verbose messages be printed to the console?
 #' @param ... additional arguments to pass to breakpoint detection. See
 #' \code{find_breakpoints()} for more information.
 #' @return A data.frame of class "adapter".
+#' @details If you provide one or more `max_end_var` names, the function will
+#' look for their values in both the pattern and subject rows, calculate their
+#' minimum  and return it in the output object. The value will then be
+#' respected by `find_breakpoints()` and the function will not look at
+#' positions beyond this value.
 #' @examples
 #' data(rbps)
 #' find_all_adapters(rbps$Core_ORF[1:3], data = rbps)
@@ -32,10 +47,13 @@ find_all_adapters <- function(
     id_var = "Core_ORF",
     seq_var = "translation",
     submat = "BLOSUM80",
+    max_end_vars = NULL,
+    max_end = NULL,
     method = "cemean",
-    pident_threshold = 0.4,
-    start_threshold = 0.25,
-    merge = TRUE,
+    min_pident = 0.4,
+    max_start = 10,
+    merge_beginning = TRUE,
+    merge_conserved = TRUE,
     cores = 1,
     verbose = getOption("verbose"),
     ...
@@ -62,15 +80,17 @@ find_all_adapters <- function(
         id_var = id_var,
         seq_var = seq_var,
         submat = submat,
+        max_end_vars = max_end_vars,
         data = data,
         verbose = verbose
       )
       adapter <- ps |>
-        find_breakpoints(method = method, ...) |>
+        find_breakpoints(max_end = max_end, method = method, ...) |>
         find_adapter(
-          pident_threshold = pident_threshold,
-          start_threshold = start_threshold,
-          merge = merge
+          min_pident = min_pident,
+          max_start = max_start,
+          merge_beginning = merge_beginning,
+          merge_conserved = merge_conserved
         )
       adapters_list[[i]] <- adapter
     }
@@ -93,15 +113,17 @@ find_all_adapters <- function(
           id_var = id_var,
           seq_var = seq_var,
           submat = submat,
+          max_end_vars = max_end_vars,
           data = data,
           verbose = verbose
         )
         adapter <- ps |>
-          find_breakpoints(method = method, ...) |>
+          find_breakpoints(max_end = max_end, method = method, ...) |>
           find_adapter(
-            pident_threshold = pident_threshold,
-            start_threshold = start_threshold,
-            merge = merge
+            min_pident = min_pident,
+            max_start = max_start,
+            merge_beginning = merge_beginning,
+            merge_conserved = merge_conserved
           )
         return(adapter)
     }
