@@ -12,6 +12,11 @@
 #' @param value character; the variable within the adapter data frame to use as
 #' values in the matrix, "pident", "mean_score", or "end".
 #' @param cores integer; number of CPU cores to use.
+#' @note The function handles incomplete adapter data frames where some sequence
+#' pairs are missing. Missing pairs are assumed to lack shared adapters and are
+#' filled with 0 values in the matrix. However, sequences with no shared 
+#' adapters across any pair are not recoverable if they were dropped from the 
+#' data frame.
 #' @examples
 #' # import example data
 #' data(rbps)

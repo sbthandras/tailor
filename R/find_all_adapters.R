@@ -37,6 +37,13 @@
 #' minimum  and return it in the output object. The value will then be
 #' respected by `find_breakpoints()` and the function will not look at
 #' positions beyond this value.
+#' @note When comparing all pairs of sequences, most pairs will not share an
+#' adapter, resulting in a sparse data frame. It makes sense to remove NA rows
+#' and export only those with shared adapters. The `adapter_matrix()` function
+#' assumes missing pairs did not have a shared adaptor and restores these pairs
+#' with 0 values in the matrix. However, sequences with no shared adapters to
+#' any other sequence are dropped from the data frame and cannot be recovered
+#' in the matrix.
 #' @examples
 #' data(rbps)
 #' find_all_adapters(rbps$Core_ORF[1:3], data = rbps)
