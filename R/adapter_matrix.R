@@ -35,13 +35,7 @@ adapter_matrix <- function(
     value = "pident",
     verbose = getOption("verbose")
   ) {
-  if (!inherits(adapters, "adapter")) {
-    msg <- paste0(
-      "'adapters' must be a data frame of class 'adapter'. ",
-      "Use find_adapter() to create a compatible data frame."
-    )
-    stop(msg)
-  }
+  adapters <- validate_adapters(adapters)
   if (is.null(ids)) {
     ids <- unique(c(adapters$pattern_id, adapters$subject_id))
   } else {
