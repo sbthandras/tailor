@@ -1,6 +1,6 @@
 #' Filter comparisons
 #'
-#' Filter comparisons (brakpoints or adapters) based on ids or properties from
+#' Filter comparisons (breakpoints or adapters) based on ids or properties from
 #' the supporting data set.
 #' @importFrom dplyr distinct
 #' @param comps data.frame; the comparisons data set to be filtered. Must be of

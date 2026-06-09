@@ -4,7 +4,14 @@
 \alias{schoco}
 \title{SCores of HOmogeneity and COmpleteness}
 \usage{
-schoco(mat, k, homogeneity_thr = 0.75, completeness_thr = 0.75)
+schoco(
+  mat,
+  k,
+  h = NULL,
+  homogeneity_thr = 0.75,
+  completeness_thr = 0.75,
+  verbose = getOption("verbose")
+)
 }
 \arguments{
 \item{mat}{adapter_matrix; a matrix of class "adapter_matrix". Use
@@ -12,12 +19,18 @@ adapter_matrix() to create a compatible matrix.}
 
 \item{k}{integer; the number of clusters to split the RBPs into.}
 
+\item{h}{hclust object; a hierarchical clustering object created from the 
+distance matrix. If NULL, the function will create a hierarchical clustering 
+object from the input matrix using the average method.}
+
 \item{homogeneity_thr}{numeric; minimum percentage identity of the identified
 adapter sequence to be considered a shared adapter for homogeneity.}
 
 \item{completeness_thr}{numeric; minimum percentage identity of the
 identified adapter sequence to be considered a shared adapter for
 completeness.}
+
+\item{verbose}{logical; should verbose messages be printed to the console?}
 }
 \value{
 A data frame with 6 columns: nclust (number of clusters requested),

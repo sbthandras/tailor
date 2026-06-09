@@ -26,7 +26,7 @@ column with the same ids as the comparisons data frame (e.g. "Core_ORF") and
 a column with the values to filter by (e.g. "ACL 2").}
 }
 \description{
-Filter comparisons (brakpoints or adapters) based on ids or properties from
+Filter comparisons (breakpoints or adapters) based on ids or properties from
 the supporting data set.
 }
 \examples{
