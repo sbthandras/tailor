@@ -44,17 +44,31 @@ validate_adapters <- function(adapters) {
   if (!is.numeric(adapters$mean_score)) {
     stop("'mean_score' variable must be of type numeric.")
   }
+  # remove duplicate rows
+  adapters <- adapters |> dplyr::distinct()
+  # order pairs alphabetically and drop reverse duplicates with identical values
+  adapters <- adapters |>
+    dplyr::mutate(
+      .id1 = pmin(pattern_id, subject_id),
+      .id2 = pmax(pattern_id, subject_id),
+      .rev = pattern_id > subject_id
+    ) |>
+    dplyr::rowwise() |>
+    dplyr::mutate(
+      pattern_id = ifelse(.rev, .id2, .id1),
+      subject_id = ifelse(.rev, .id1, .id2)
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(-.id1, -.id2, -.rev) |>
+    dplyr::distinct(
+      pattern_id, subject_id, start, end, mean_score, pident, .keep_all = TRUE
+    )
+  # check that pair appears more than once
   pairs <- adapters |>
     dplyr::select(pattern_id, subject_id) |>
     dplyr::distinct()
-  if (nrow(pairs) != nrow(adapters)) stop("Pairs must be unique.")
-  double_pairs <- pairs |>
-    dplyr::bind_rows(
-      pairs |> dplyr::rename(pattern_id = subject_id, subject_id = pattern_id)
-    ) |>
-    dplyr::distinct()
-  if (nrow(double_pairs) != nrow(pairs) * 2) {
-    stop("Pairs must not be duplicated in reverse.")
+  if (nrow(pairs) != nrow(adapters)) {
+    stop("Pairs must be unique.")
   }
   class(adapters) <- c("adapter", class(adapters))
   return(adapters)
