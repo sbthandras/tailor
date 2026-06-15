@@ -111,5 +111,5 @@ merge_regions <- function(df) {
       df$pident[i + 1] <- round((sum_pident1 + sum_pident2) / newlength, 3)
     }
   }
-  df |> na.omit()
+  df |> stats::na.omit()
 }

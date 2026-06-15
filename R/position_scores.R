@@ -109,7 +109,7 @@ position_scores <- function(
   if (!is.null(max_end_vars)) {
     max_end <- sapply(max_end_vars, function(x) {
       c(df[[x]][pat_index_x], df[[x]][seq_index_x])
-    }) |> as.numeric() |> na.omit() |> unique()
+    }) |> as.numeric() |> stats::na.omit() |> unique()
     max_end <- max_end[max_end != 0]
     if (length(max_end) == 0) {
       max_end <- NULL
