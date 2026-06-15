@@ -46,35 +46,40 @@ validate_adapters <- function(adapters) {
   }
   # remove duplicate rows
   adapters <- adapters |> dplyr::distinct()
-  # order pairs alphabetically and drop reverse duplicates with identical values
+  # remove reverse duplicates where pattern_id and subject_id are swapped
   adapters <- adapters |>
     dplyr::mutate(
       .id1 = pmin(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id")),
-      .id2 = pmax(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id")),
-      .rev = !!rlang::sym("pattern_id") > !!rlang::sym("subject_id")
+      .id2 = pmax(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id"))
     ) |>
-    dplyr::rowwise() |>
-    dplyr::mutate(
-      pattern_id = ifelse(!!rlang::sym(".rev"), !!rlang::sym(".id3"), !!rlang::sym(".id1")),
-      subject_id = ifelse(!!rlang::sym(".rev"), !!rlang::sym(".id1"), !!rlang::sym(".id3"))
-    ) |>    dplyr::select(-!!rlang::sym(".id1")) |>
-    dplyr::select(-!!rlang::sym(".id2")) |>
-    dplyr::select(-!!rlang::sym(".rev")) |>
     dplyr::distinct(
-      !!rlang::sym("pattern_id"),
-      !!rlang::sym("subject_id"),
+      !!rlang::sym(".id1"),
+      !!rlang::sym(".id2"),
       !!rlang::sym("start"),
       !!rlang::sym("end"),
       !!rlang::sym("mean_score"),
       !!rlang::sym("pident"),
       .keep_all = TRUE
+    ) |>
+    dplyr::select(-!!rlang::sym(".id1"), -!!rlang::sym(".id2")) |>
+    as.data.frame()
+  # check for remaining duplicates - suggests multiple values for the same pair
+  duplicates <- paste(
+    pmin(adapters$pattern_id, adapters$subject_id),
+    pmax(adapters$pattern_id, adapters$subject_id),
+    sep = " "
+  ) |>
+    table() |>
+    as.data.frame() |>
+    dplyr::filter(!!rlang::sym("Freq") > 1) |>
+    dplyr::pull(!!rlang::sym("Var1"))
+  if (length(duplicates) > 0) {
+    stop(
+      paste0(
+        "Unresolved duplicate pairs detected: ",
+        paste(duplicates, collapse = ", ")
+      )
     )
-  # check that pair appears more than once
-  pairs <- adapters |>
-    dplyr::select(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id")) |>
-    dplyr::distinct()
-  if (nrow(pairs) != nrow(adapters)) {
-    stop("Pairs must be unique.")
   }
   class(adapters) <- c("adapter", class(adapters))
   return(adapters)
