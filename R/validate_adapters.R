@@ -1,12 +1,12 @@
 #' Validate adapter data frame
-#' 
-#' This function checks if the input data frame has the required structure and 
-#' variable types to be used as an adapter data frame. It ensures that the 
-#' necessary columns are present and of the correct type, and it assigns the 
+#'
+#' This function checks if the input data frame has the required structure and
+#' variable types to be used as an adapter data frame. It ensures that the
+#' necessary columns are present and of the correct type, and it assigns the
 #' "adapter" class to the data frame if it passes validation.
 #' @param adapters a data frame that is expected to contain adapter information.
-#' @return A data frame of class "adapter" if the input is valid.,If the input 
-#' is not valid, the function will stop and return an error message indicating 
+#' @return A data frame of class "adapter" if the input is valid.,If the input
+#' is not valid, the function will stop and return an error message indicating
 #' the issue.
 #' @noRd
 validate_adapters <- function(adapters) {
@@ -49,23 +49,29 @@ validate_adapters <- function(adapters) {
   # order pairs alphabetically and drop reverse duplicates with identical values
   adapters <- adapters |>
     dplyr::mutate(
-      .id1 = pmin(pattern_id, subject_id),
-      .id2 = pmax(pattern_id, subject_id),
-      .rev = pattern_id > subject_id
+      .id1 = pmin(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id")),
+      .id2 = pmax(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id")),
+      .rev = !!rlang::sym("pattern_id") > !!rlang::sym("subject_id")
     ) |>
     dplyr::rowwise() |>
     dplyr::mutate(
-      pattern_id = ifelse(.rev, .id2, .id1),
-      subject_id = ifelse(.rev, .id1, .id2)
-    ) |>
-    dplyr::ungroup() |>
-    dplyr::select(-.id1, -.id2, -.rev) |>
+      pattern_id = ifelse(!!rlang::sym(".rev"), !!rlang::sym(".id3"), !!rlang::sym(".id1")),
+      subject_id = ifelse(!!rlang::sym(".rev"), !!rlang::sym(".id1"), !!rlang::sym(".id3"))
+    ) |>    dplyr::select(-!!rlang::sym(".id1")) |>
+    dplyr::select(-!!rlang::sym(".id2")) |>
+    dplyr::select(-!!rlang::sym(".rev")) |>
     dplyr::distinct(
-      pattern_id, subject_id, start, end, mean_score, pident, .keep_all = TRUE
+      !!rlang::sym("pattern_id"),
+      !!rlang::sym("subject_id"),
+      !!rlang::sym("start"),
+      !!rlang::sym("end"),
+      !!rlang::sym("mean_score"),
+      !!rlang::sym("pident"),
+      .keep_all = TRUE
     )
   # check that pair appears more than once
   pairs <- adapters |>
-    dplyr::select(pattern_id, subject_id) |>
+    dplyr::select(!!rlang::sym("pattern_id"), !!rlang::sym("subject_id")) |>
     dplyr::distinct()
   if (nrow(pairs) != nrow(adapters)) {
     stop("Pairs must be unique.")
