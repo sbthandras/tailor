@@ -8,6 +8,8 @@
 #' region to be considered a "conserved" region.
 #' @param max_start integer; the maximum accepted starting position for the
 #' first conserved region.
+#' @param min_width integer; the minimum accepted width for a conserved region
+#' to be considered an adapter.
 #' @param merge_beginning logical; whether to merge the positions before the
 #' first conserved region. See Details for more information.
 #' @param merge_conserved logical; whether neighboring conserved regions should
@@ -41,6 +43,7 @@ find_adapter <- function(
     bps,
     min_pident = 0.4,
     max_start = 10,
+    min_width = 7,
     merge_beginning = TRUE,
     merge_conserved = TRUE
   ) {
@@ -80,6 +83,16 @@ find_adapter <- function(
     adapter <- consreg
   }
   if (!is.na(adapter$pident) && adapter$pident < min_pident) {
+    adapter <- data.frame(
+      pattern_id = unique(bps$pattern_id),
+      subject_id = unique(bps$subject_id),
+      start = NA_integer_,
+      end = NA_integer_,
+      mean_score = NA_real_,
+      pident = NA_real_
+    )
+  }
+  if (!is.na(adapter$start) && (adapter$end - adapter$start + 1) < min_width) {
     adapter <- data.frame(
       pattern_id = unique(bps$pattern_id),
       subject_id = unique(bps$subject_id),
