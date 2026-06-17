@@ -23,6 +23,8 @@
 #' region to be considered a "conserved" region.
 #' @param max_start integer; the maximum accepted starting position for the
 #' first conserved region.
+#' @param min_width integer; the minimum accepted width for a conserved region
+#' to be considered an adapter.
 #' @param merge_beginning logical; whether to merge the positions before the
 #' first conserved region. See Details for more information.
 #' @param merge_conserved logical; whether neighboring conserved regions should
@@ -59,6 +61,7 @@ find_all_adapters <- function(
     method = "cemean",
     min_pident = 0.4,
     max_start = 10,
+    min_width = 7,
     merge_beginning = TRUE,
     merge_conserved = TRUE,
     cores = 1,
@@ -96,6 +99,7 @@ find_all_adapters <- function(
         find_adapter(
           min_pident = min_pident,
           max_start = max_start,
+          min_width = min_width,
           merge_beginning = merge_beginning,
           merge_conserved = merge_conserved
         )
@@ -129,6 +133,7 @@ find_all_adapters <- function(
           find_adapter(
             min_pident = min_pident,
             max_start = max_start,
+            min_width = min_width,
             merge_beginning = merge_beginning,
             merge_conserved = merge_conserved
           )

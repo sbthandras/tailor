@@ -15,6 +15,7 @@ find_all_adapters(
   method = "cemean",
   min_pident = 0.4,
   max_start = 10,
+  min_width = 7,
   merge_beginning = TRUE,
   merge_conserved = TRUE,
   cores = 1,
@@ -53,6 +54,9 @@ region to be considered a "conserved" region.}
 
 \item{max_start}{integer; the maximum accepted starting position for the
 first conserved region.}
+
+\item{min_width}{integer; the minimum accepted width for a conserved region
+to be considered an adapter.}
 
 \item{merge_beginning}{logical; whether to merge the positions before the
 first conserved region. See Details for more information.}
