@@ -21,11 +21,17 @@ determined by the order of unique ids in the 'adapters' data frame. If
 specified, all ids must be present in the'adapters' data frame and all ids
 in the 'adapters' data frame must be present in the 'ids' vector.}
 
-\item{value}{character; the variable within the adapter data frame to use as
-values in the matrix, "pident", "mean_score", or "end".}
+\item{value}{character; a numeric variable within the adapter data frame to 
+use as matrix values.}
 
 \item{verbose}{logical; should verbose messages be printed to the console?
 If TRUE, a progress bar is also displayed.}
+}
+\value{
+A symmetric similarity matrix. If value = "pident", the diagonal is 
+set to 1. The matrix is of class "adapter_matrix" and can be used with the 
+plot() function to visualize the similarity between sequences based on shared 
+adapters.
 }
 \description{
 Convert identified adapters into matrix form.
