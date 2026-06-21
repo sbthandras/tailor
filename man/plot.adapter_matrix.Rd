@@ -4,13 +4,17 @@
 \alias{plot.adapter_matrix}
 \title{Plot adapter matrix}
 \usage{
-\method{plot}{adapter_matrix}(x, clusters = NULL, ...)
+\method{plot}{adapter_matrix}(x, clusters = NULL, reorder = TRUE, ...)
 }
 \arguments{
 \item{x}{adapter_matrix; a matrix of class "adapter_matrix". Use
 adapter_matrix() to create a compatible matrix.}
 
 \item{clusters}{data.frame; a table of RBP IDs and cluster designations.}
+
+\item{reorder}{logical; if TRUE (default) and clusters are provided,
+reorder matrix rows and columns by cluster size (largest first) so that
+cluster members are grouped together in the heatmap.}
 
 \item{...}{additional arguments (not used).}
 }
