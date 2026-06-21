@@ -6,6 +6,9 @@
 #' @param x adapter_matrix; a matrix of class "adapter_matrix". Use
 #' adapter_matrix() to create a compatible matrix.
 #' @param clusters data.frame; a table of RBP IDs and cluster designations.
+#' @param reorder logical; if TRUE (default) and clusters are provided,
+#' reorder matrix rows and columns by cluster size (largest first) so that
+#' cluster members are grouped together in the heatmap.
 #' @param ... additional arguments (not used).
 #' @return A heatmap. If clusters are provided, also show cluster assignments.
 #' @examples
@@ -21,8 +24,31 @@
 #' plot(amat, clusters = clusters)
 #' @export
 #' @method plot adapter_matrix
-plot.adapter_matrix <- function(x, clusters = NULL, ...) {
+plot.adapter_matrix <- function(x, clusters = NULL, reorder = TRUE, ...) {
   mat <- x
+  # Reorder matrix by cluster size if requested
+  if (!is.null(clusters) && reorder) {
+    # Count cluster sizes and order by size (largest first)
+    cluster_sizes <- clusters |>
+      dplyr::group_by(!!rlang::sym("cluster")) |>
+      dplyr::summarise(
+        size = dplyr::n(),
+        .groups = "drop"
+      ) |>
+      dplyr::arrange(dplyr::desc(!!rlang::sym("size")))
+    # Reorder data frame by cluster size
+    clusters <- clusters |>
+      dplyr::mutate(
+        cluster = factor(
+          !!rlang::sym("cluster"),
+          levels = cluster_sizes$cluster
+        )
+      ) |>
+      dplyr::arrange(!!rlang::sym("cluster"))
+    # Reorder matrix rows and columns by new_order
+    ordered_ids <- intersect(clusters$id, rownames(mat))
+    mat <- mat[ordered_ids, ordered_ids]
+  }
   mat_long <- reshape2::melt(mat, value.name = "pident")
   p_main <- ggplot2::ggplot(
       mat_long,

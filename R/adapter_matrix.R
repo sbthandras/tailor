@@ -9,10 +9,14 @@
 #' determined by the order of unique ids in the 'adapters' data frame. If
 #' specified, all ids must be present in the'adapters' data frame and all ids
 #' in the 'adapters' data frame must be present in the 'ids' vector.
-#' @param value character; the variable within the adapter data frame to use as
-#' values in the matrix, "pident", "mean_score", or "end".
+#' @param value character; a numeric variable within the adapter data frame to 
+#' use as matrix values.
 #' @param verbose logical; should verbose messages be printed to the console?
 #' If TRUE, a progress bar is also displayed.
+#' @return A symmetric similarity matrix. If value = "pident", the diagonal is 
+#' set to 1. The matrix is of class "adapter_matrix" and can be used with the 
+#' plot() function to visualize the similarity between sequences based on shared 
+#' adapters.
 #' @note The function handles incomplete adapter data frames where some sequence
 #' pairs are missing. Missing pairs are assumed to lack shared adapters and are
 #' filled with 0 values in the matrix. However, sequences with no shared
@@ -56,8 +60,11 @@ adapter_matrix <- function(
       stop(msg)
     }
   }
-  value <- match.arg(value, c("pident", "mean_score", "end"))
-
+  valid_values <- names(adapters)[
+    !names(adapters) %in% c("pattern_id", "subject_id") &
+    sapply(adapters, is.numeric)
+  ]
+  value <- match.arg(value, choices = valid_values)
   dmat <- matrix(0, nrow = length(ids), ncol = length(ids))
   rownames(dmat) = ids
   colnames(dmat) = ids
